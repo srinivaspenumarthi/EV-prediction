@@ -18,36 +18,28 @@ st.write("Select a model and enter values to predict energy consumption (kWhTota
 selected_model = st.selectbox("Choose a Model", list(models.keys()))
 model = joblib.load(models[selected_model])
 
-# Generate random lag values
-kwhTotal_lag_1 = np.random.uniform(0, 1)
-kwhTotal_lag_2 = np.random.uniform(0, 1)
-kwhTotal_lag_3 = np.random.uniform(0, 1)
-
 # User input fields
 input_data = {
     "dollars": st.number_input("Dollars", value=0.0),
-    "startTime": st.number_input("Start Time (Hour)", value=13.0),
-    "endTime": st.number_input("End Time (Hour)", value=16.0),
-    "chargeTimeHrs": st.number_input("Charge Time (Hrs)", value=2.8089),
+    "startTime": st.number_input("Start Time (Hour)", value=13),
+    "endTime": st.number_input("End Time (Hour)", value=16),
+    "chargeTimeHrs": st.number_input("Charge Time (Hrs)", value=2.8),
     "distance": st.number_input("Distance (miles)", value=21.02),
-    "managerVehicle": st.selectbox("Manager Vehicle", [0, 1]),
-    "facilityType": st.selectbox("Facility Type", [1, 2, 3, 4]),
-    "reportedZip": st.number_input("Reported Zip", value=1.0),
     "month": st.number_input("Month", value=1),
     "is_weekend": st.selectbox("Is Weekend", [0, 1]),
-    "kwhTotal_lag_1": kwhTotal_lag_1,
-    "kwhTotal_lag_2": kwhTotal_lag_2,
-    "kwhTotal_lag_3": kwhTotal_lag_3,
+    "kwhTotal_lag_1": st.number_input("kWhTotal Lag 1", value=0.0),
+    "kwhTotal_lag_2": st.number_input("kWhTotal Lag 2", value=0.0),
+    "kwhTotal_lag_3": st.number_input("kWhTotal Lag 3", value=0.0),
 }
 
-# Single dropdown for weekday selection
+# Dropdown for weekday selection (Convert to numerical format)
 selected_day = st.selectbox("Select Day of the Week", ["Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"])
-for day in ["Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"]:
-    input_data[day] = 1 if day == selected_day else 0
+day_mapping = {"Mon": 0, "Tues": 1, "Wed": 2, "Thurs": 3, "Fri": 4, "Sat": 5, "Sun": 6}
+input_data["weekday"] = day_mapping[selected_day]
 
 # Auto-calculate dependent values
 input_data["distance_x_chargeTimeHrs"] = input_data["distance"] * input_data["chargeTimeHrs"]
-input_data["day_of_week_x_start_hour"] = input_data[selected_day] * input_data["startTime"]
+input_data["day_of_week_x_start_hour"] = input_data["weekday"] * input_data["startTime"]
 input_data["kwhTotal_x_kwhTotal_lag_1"] = input_data["kwhTotal_lag_1"] * input_data["kwhTotal_lag_1"]
 input_data["kwhTotal_x_kwhTotal_lag_2"] = input_data["kwhTotal_lag_2"] * input_data["kwhTotal_lag_2"]
 input_data["kwhTotal_x_kwhTotal_lag_3"] = input_data["kwhTotal_lag_3"] * input_data["kwhTotal_lag_3"]
@@ -55,10 +47,15 @@ input_data["kwhTotal_x_kwhTotal_lag_3"] = input_data["kwhTotal_lag_3"] * input_d
 # Convert input to DataFrame
 input_df = pd.DataFrame([input_data])
 
-# Predict
-if st.button("Predict"):
-    try:
-        prediction = model.predict(input_df)
-        st.success(f"Predicted kWhTotal: {prediction[0]:.2f}")
-    except Exception as e:
-        st.error(f"Error during prediction: {e}")
+# Ensure input features match model expectations
+missing_features = set(model.feature_names_in_) - set(input_df.columns)
+if missing_features:
+    st.error(f"Missing features: {missing_features}")
+else:
+    # Predict
+    if st.button("Predict"):
+        try:
+            prediction = model.predict(input_df)
+            st.success(f"Predicted kWhTotal: {prediction[0]:.2f}")
+        except Exception as e:
+            st.error(f"Error during prediction: {e}")
