@@ -2,6 +2,7 @@ import streamlit as st
 import joblib
 import pandas as pd
 import numpy as np
+from sklearn.utils.validation import check_is_fitted
 
 # Load trained models
 models = {
@@ -17,6 +18,13 @@ st.write("Select a model and enter values to predict energy consumption (kWhTota
 # Model selection
 selected_model = st.selectbox("Choose a Model", list(models.keys()))
 model = joblib.load(models[selected_model])
+
+# Ensure the model is fitted
+try:
+    check_is_fitted(model)
+except:
+    st.error("The selected model is not fitted. Please train the model before using it.")
+    st.stop()
 
 # Generate random lag values with a safe default
 kwhTotal_lag_1 = float(np.random.uniform(0, 1))
