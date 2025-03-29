@@ -33,7 +33,17 @@ input_data = {
     "Fri": st.selectbox("Friday", [0, 1]),
     "Sat": st.selectbox("Saturday", [0, 1]),
     "Sun": st.selectbox("Sunday", [0, 1]),
-    "reportedZip": st.number_input("Reported Zip", value=1.0)
+    "reportedZip": st.number_input("Reported Zip", value=1.0),
+    "month": st.number_input("Month", value=1),
+    "is_weekend": st.selectbox("Is Weekend", [0, 1]),
+    "kwhTotal_lag_1": st.number_input("kWhTotal Lag 1", value=0.0),
+    "kwhTotal_lag_2": st.number_input("kWhTotal Lag 2", value=0.0),
+    "kwhTotal_lag_3": st.number_input("kWhTotal Lag 3", value=0.0),
+    "distance_x_chargeTimeHrs": st.number_input("Distance x Charge Time Hrs", value=0.0),
+    "day_of_week_x_start_hour": st.number_input("Day of Week x Start Hour", value=0),
+    "kwhTotal_x_kwhTotal_lag_1": st.number_input("kWhTotal x Lag 1", value=0.0),
+    "kwhTotal_x_kwhTotal_lag_2": st.number_input("kWhTotal x Lag 2", value=0.0),
+    "kwhTotal_x_kwhTotal_lag_3": st.number_input("kWhTotal x Lag 3", value=0.0)
 }
 
 # Convert input to DataFrame
