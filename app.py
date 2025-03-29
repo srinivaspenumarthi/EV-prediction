@@ -3,7 +3,6 @@ import joblib
 import numpy as np
 import time
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # Load the trained model
 model = joblib.load("best_random_forest.pkl")
@@ -165,12 +164,9 @@ if predict_button:
     
     st.success(f"⚡ Predicted Power Consumption: {prediction[0]:.4f} kWh")
     
-    # Display a simple visualization of the result
-    fig, ax = plt.subplots()
-    ax.bar(['Predicted kWh'], [prediction[0]], color='#FF4B2B')
-    ax.set_ylabel('kWh')
-    ax.set_title('Power Consumption Prediction')
-    st.pyplot(fig)
+    # Use Streamlit's native chart capabilities instead of matplotlib
+    chart_data = pd.DataFrame({'Metric': ['Predicted kWh'], 'Value': [prediction[0]]})
+    st.bar_chart(chart_data.set_index('Metric'))
 
 # Footer
 st.markdown("---")
