@@ -48,19 +48,19 @@ for day in ["Mon", "Tues", "Wed", "Thurs", "Fri", "Sat", "Sun"]:
 # Auto-calculate dependent values
 input_data["distance_x_chargeTimeHrs"] = input_data["distance"] * input_data["chargeTimeHrs"]
 input_data["day_of_week_x_start_hour"] = input_data[selected_day] * input_data["startTime"]
-input_data["kwhTotal_x_kwhTotal_lag_1"] = float(input_data["kwhTotal_lag_1"]) * float(input_data["kwhTotal_lag_1"])
-input_data["kwhTotal_x_kwhTotal_lag_2"] = float(input_data["kwhTotal_lag_2"]) * float(input_data["kwhTotal_lag_2"])
-input_data["kwhTotal_x_kwhTotal_lag_3"] = float(input_data["kwhTotal_lag_3"]) * float(input_data["kwhTotal_lag_3"])
+input_data["kwhTotal_x_kwhTotal_lag_1"] = input_data["kwhTotal_lag_1"] * input_data["kwhTotal_lag_1"]
+input_data["kwhTotal_x_kwhTotal_lag_2"] = input_data["kwhTotal_lag_2"] * input_data["kwhTotal_lag_2"]
+input_data["kwhTotal_x_kwhTotal_lag_3"] = input_data["kwhTotal_lag_3"] * input_data["kwhTotal_lag_3"]
 
 # Convert input to DataFrame
 input_df = pd.DataFrame([input_data])
 
 # Ensure input features match model's expected features
-missing_features = set(model.feature_names_in_) - set(input_df.columns)
-for feature in missing_features:
-    input_df[feature] = 0  # Assign default values for missing features
-
-input_df = input_df[model.feature_names_in_]
+if hasattr(model, 'feature_names_in_'):
+    missing_features = set(model.feature_names_in_) - set(input_df.columns)
+    for feature in missing_features:
+        input_df[feature] = 0  # Assign default values for missing features
+    input_df = input_df[model.feature_names_in_]
 
 # Predict
 if st.button("Predict"):
