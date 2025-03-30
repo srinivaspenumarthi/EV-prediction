@@ -17,6 +17,14 @@ preprocessor = ColumnTransformer([
     ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
 ])
 
+# Fit preprocessor with dummy data to prevent errors
+dummy_data = pd.DataFrame({
+    'stationId': [0], 'distance': [0.0], 'platform': ['android'],
+    'facilityType': [1], 'startHour': [0], 'is_peak_hour': [0],
+    'is_weekend': [0], 'startMonth': [1], 'season': [1], 'charging_speed': [1.0]
+})
+preprocessor.fit(dummy_data)
+
 # Custom Styling
 st.set_page_config(page_title="EV Charging AI 🚀", layout="wide")
 
