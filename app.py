@@ -8,7 +8,6 @@ from sklearn.compose import ColumnTransformer
 from streamlit_js_eval import get_geolocation
 import folium
 from streamlit_folium import folium_static
-from geopy.geocoders import Nominatim
 
 # Load the trained XGBoost model
 model_filename = "xgboost_ev_model.pkl"
@@ -88,12 +87,17 @@ st.write("---")
 
 # Get User Location or Search by City
 city_name = st.text_input("Enter a city name to search (optional):", "")
-geolocator = Nominatim(user_agent="geoapiExercises")
+
+def get_coordinates(city):
+    url = f"https://nominatim.openstreetmap.org/search?format=json&q={city}"
+    response = requests.get(url).json()
+    if response:
+        return float(response[0]["lat"]), float(response[0]["lon"])
+    return None, None
 
 if city_name:
-    location = geolocator.geocode(city_name)
-    if location:
-        lat, lon = location.latitude, location.longitude
+    lat, lon = get_coordinates(city_name)
+    if lat and lon:
         st.success(f"📍 Location set to: {city_name} ({lat}, {lon})")
     else:
         st.warning("⚠️ Could not find the entered city. Using default user location.")
