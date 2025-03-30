@@ -1,92 +1,68 @@
 import streamlit as st
-import joblib
-import pandas as pd
 import numpy as np
+import pickle
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
 
-# Load the trained model
-model_filename = "best_random_forest.pkl"
-model = joblib.load(model_filename)
+# Load the trained XGBoost model
+with open("xgboost_ev_model.pkl", "rb") as file:
+    model = pickle.load(file)
 
-# Get feature names
-feature_names = model.feature_names_in_
+# Define preprocessing pipeline
+categorical_cols = ['platform', 'facilityType', 'season']
+numeric_cols = ['stationId', 'distance', 'startHour', 'is_peak_hour', 'is_weekend', 'startMonth', 'charging_speed']
+preprocessor = ColumnTransformer([
+    ('num', StandardScaler(), numeric_cols),
+    ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
+])
 
-# Custom Styling
-st.set_page_config(page_title="EV Charging AI 🚀", layout="wide")
+# Streamlit UI
+st.title("XGBoost Prediction App")
+st.write("Enter input features to get a prediction")
 
-# Custom CSS for Billion-Dollar Look
-st.markdown("""
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            color: #ffffff;
-            background-color: #0e1117;
-        }
-        .stApp {
-            background: linear-gradient(135deg, #1f1f1f, #2c2c2c);
-            padding: 2rem;
-        }
-        .title {
-            font-size: 3rem;
-            font-weight: 700;
-            text-align: center;
-            color: #61dafb;
-        }
-        .subtitle {
-            font-size: 1.2rem;
-            text-align: center;
-            color: #a0a0a0;
-        }
-        .stTextInput, .stNumberInput, .stButton > button {
-            border-radius: 10px;
-        }
-        .stButton > button {
-            background: #61dafb;
-            color: black;
-            font-size: 1.1rem;
-            padding: 10px 20px;
-            border-radius: 10px;
-            transition: 0.3s;
-        }
-        .stButton > button:hover {
-            background: #40a9ff;
-        }
-        .prediction-box {
-            background: #222;
-            padding: 20px;
-            border-radius: 15px;
-            font-size: 1.5rem;
-            text-align: center;
-            font-weight: bold;
-            color: #61dafb;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# Create input fields
+def user_input():
+    station_id = st.number_input("Station ID", value=0)
+    distance = st.number_input("Distance (km)", value=0.0)
+    platform = st.selectbox("Platform", ["A", "B", "C"])
+    facility_type = st.selectbox("Facility Type", ["Parking", "Charging Hub", "Other"])
+    start_hour = st.number_input("Start Hour", min_value=0, max_value=23, value=12)
+    is_peak_hour = st.selectbox("Is Peak Hour", [0, 1])
+    is_weekend = st.selectbox("Is Weekend", [0, 1])
+    start_month = st.number_input("Start Month", min_value=1, max_value=12, value=1)
+    season = st.selectbox("Season", ["Winter", "Spring", "Summer", "Fall"])
+    charging_speed = st.number_input("Charging Speed (kW)", value=0.0)
+    
+    return pd.DataFrame({
+        "stationId": [station_id],
+        "distance": [distance],
+        "platform": [platform],
+        "facilityType": [facility_type],
+        "startHour": [start_hour],
+        "is_peak_hour": [is_peak_hour],
+        "is_weekend": [is_weekend],
+        "startMonth": [start_month],
+        "season": [season],
+        "charging_speed": [charging_speed]
+    })
 
-# App Title
-st.markdown("<h1 class='title'>⚡ EV Charging Prediction AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>AI-powered predictions for Electric Vehicle charging analysis</p>", unsafe_allow_html=True)
-st.write("---")
+# Get input data
+input_df = user_input()
 
-# Layout: Split into Two Columns
-col1, col2 = st.columns(2)
+# Button to get prediction
+if st.button("Predict"):
+    st.write("Fetching prediction...")
+    
+    # Preprocess input
+    input_processed = preprocessor.fit_transform(input_df)
+    
+    # Get predictions for both outputs
+    predictions = model.predict(input_processed)
+    kwh_total, charge_time_hrs = predictions[0]
+    
+    st.success(f"Predicted kWh Total: {kwh_total}")
+    st.success(f"Predicted Charge Time (hrs): {charge_time_hrs}")
 
-# User Inputs
-input_data = {}
-with col1:
-    st.subheader("🔢 Enter Feature Values")
-    for feature in feature_names:
-        input_data[feature] = st.number_input(f"Enter {feature}", value=0.0, format="%.4f")
-
-# Make Predictions
-with col2:
-    st.subheader("🎯 Prediction Output")
-    if st.button("🚀 Predict Now"):
-        input_df = pd.DataFrame([input_data])
-        input_df = input_df[feature_names]  # Ensure correct column order
-        prediction = model.predict(input_df)
-        
-        # Display Prediction in a Styled Box
-        st.markdown(f"<div class='prediction-box'>🔮 Prediction: {prediction[0]:.4f} kWh</div>", unsafe_allow_html=True)
-
-st.write("---")
-st.markdown("<p style='text-align: center; color: #a0a0a0;'>🚀 Built with ❤️ using Streamlit | AI-Powered ⚡</p>", unsafe_allow_html=True)
+if __name__ == "__main__":
+    st.write("App is running...")
