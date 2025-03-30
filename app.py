@@ -139,6 +139,13 @@ with col1:
     input_data['season'] = 1 if input_data['startMonth'] in [12, 1, 2] else 2 if input_data['startMonth'] in [3, 4, 5] else 3 if input_data['startMonth'] in [6, 7, 8] else 4
     input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
 
+# Predict Button
+if st.button("Predict"):
+    input_df = pd.DataFrame([input_data])
+    input_processed = preprocessor.transform(input_df)
+    prediction = model.predict(input_processed)
+    st.markdown(f"<div class='prediction-box'>Predicted Charging Demand: {prediction[0]:.2f}</div>", unsafe_allow_html=True)
+
 # Display Nearby Charging Stations on Map
 if lat and lon:
     m = folium.Map(location=[lat, lon], zoom_start=12)
