@@ -350,46 +350,7 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Additional metrics (cost and environmental impact)
-                avg_electricity_cost = 0.15  # $/kWh
-                cost_estimate = kwh_total_pred * avg_electricity_cost
-                co2_saved = kwh_total_pred * 0.4  # kg CO2 equivalent
                 
-                st.markdown("""
-                    <div class="metric-container">
-                        <div class="metric-card">
-                            <div class="metric-value">$%.2f</div>
-                            <div class="metric-label">Estimated Cost</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-value">%.1f kg</div>
-                            <div class="metric-label">CO₂ Saved</div>
-                        </div>
-                    </div>
-                """ % (cost_estimate, co2_saved), unsafe_allow_html=True)
-                
-                # Charging efficiency visualization
-                efficiency = min(100, 100 * (kwh_total_pred / (charge_time_hrs_pred * input_data['charging_speed'])))
-                
-                st.markdown("<h4 style='margin-top: 1.5rem;'>Charging Efficiency:</h4>", unsafe_allow_html=True)
-                st.progress(efficiency / 100)
-                st.markdown(f"<div style='text-align: center; font-size: 0.9rem;'>{efficiency:.1f}% efficiency</div>", unsafe_allow_html=True)
-                
-                # Tips based on prediction
-                st.subheader("💡 Smart Tips")
-                tips = []
-                
-                if input_data['is_peak_hour']:
-                    tips.append("Consider charging during off-peak hours to reduce costs.")
-                
-                if charge_time_hrs_pred > 3:
-                    tips.append("For faster charging, consider using a higher-powered charging station.")
-                
-                if efficiency < 70:
-                    tips.append("Your charging efficiency is below average. Check battery health.")
-                
-                for tip in tips:
-                    st.markdown(f"<div style='background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #4CAF50;'>{tip}</div>", unsafe_allow_html=True) 
         else:
             # Default display when no prediction has been made
             st.markdown("""
