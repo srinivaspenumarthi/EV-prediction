@@ -1,4 +1,8 @@
-import streamlit as st import joblib import numpy as np import time from sklearn.ensemble import RandomForestRegressor
+import streamlit as st 
+import joblib 
+import numpy as np 
+import time from sklearn.ensemble 
+import RandomForestRegressor
 
 Load the trained model
 
@@ -6,7 +10,7 @@ model = joblib.load("best_random_forest.pkl")
 
 Streamlit app design
 
-st.set_page_config(page_title="AI Power Predictor", page_icon="🌟", layout="wide")
+st.set_page_config(page_title="EV Predictor", page_icon="🌟", layout="wide")
 
 Custom CSS for ultra-premium look
 
