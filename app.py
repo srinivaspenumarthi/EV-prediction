@@ -95,22 +95,22 @@ def get_coordinates(city):
         return float(response['results'][0]['geometry']['lat']), float(response['results'][0]['geometry']['lng'])
     return None, None
 
+lat, lon = None, None
 if city_name:
     lat, lon = get_coordinates(city_name)
     if lat and lon:
         st.success(f"📍 Location set to: {city_name} ({lat}, {lon})")
     else:
         st.warning("⚠️ Could not find the entered city. Using default user location.")
-        location = get_geolocation()
-else:
-    location = get_geolocation()
 
-if location and isinstance(location, dict) and 'coords' in location:
-    lat, lon = location['coords']['latitude'], location['coords']['longitude']
-    st.success(f"📍 Your Location: {lat}, {lon}")
-else:
-    st.warning("⚠️ Unable to retrieve location. Check your browser settings.")
-    lat, lon = None, None
+if lat is None or lon is None:
+    location = get_geolocation()
+    if location and isinstance(location, dict) and 'coords' in location:
+        lat, lon = location['coords'].get('latitude'), location['coords'].get('longitude')
+        if lat and lon:
+            st.success(f"📍 Your Location: {lat}, {lon}")
+        else:
+            st.warning("⚠️ Unable to retrieve precise location. Check your browser settings.")
 
 # Layout: Split into Two Columns
 col1, col2 = st.columns(2)
