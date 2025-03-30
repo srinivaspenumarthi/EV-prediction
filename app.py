@@ -308,19 +308,7 @@ with tab1:
             input_data['season'] = season_id
             
             # Display derived values to the user
-            st.markdown("""
-            <div style="background: rgba(30, 30, 30, 0.5); border-radius: 10px; padding: 10px; margin-top: 10px;">
-                <h4 style="color: #4CAF50; margin-bottom: 8px;">Detected Parameters</h4>
-                <ul style="list-style-type: none; padding-left: 5px; margin-bottom: 0;">
-            """, unsafe_allow_html=True)
             
-            st.markdown(f"""
-                <li>Season: {season_name}</li>
-                <li>{'Peak Hours' if input_data['is_peak_hour'] else 'Off-Peak Hours'}</li>
-                <li>{'Weekend' if input_data['is_weekend'] else 'Weekday'}</li>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("</ul></div>", unsafe_allow_html=True)
             
             # Submit button
             predict_button = st.form_submit_button(label="🚀 Generate Prediction")
