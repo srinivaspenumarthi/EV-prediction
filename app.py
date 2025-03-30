@@ -130,21 +130,31 @@ with col1:
     input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
     start_time = st.time_input("Start Time")
     start_date = st.date_input("Start Date")
+
+    # Compute derived features
     input_data['startHour'] = start_time.hour
     input_data['startMonth'] = start_date.month
     input_data['is_peak_hour'] = 1 if input_data['startHour'] in [7, 8, 9, 17, 18, 19, 20] else 0
     input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
-    input_data['season'] = (start_date.month % 12 + 3) // 3
+    input_data['season'] = 1 if input_data['startMonth'] in [12, 1, 2] else 2 if input_data['startMonth'] in [3, 4, 5] else 3 if input_data['startMonth'] in [6, 7, 8] else 4
     input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
 
-if st.button("Predict ⚡"):
+# Predict Button
+if st.button("Predict"):
     input_df = pd.DataFrame([input_data])
     input_processed = preprocessor.transform(input_df)
-    predicted_value = float(model.predict(input_processed))
-    st.markdown(f"<div class='prediction-box'>Predicted Charging Demand: {predicted_value:.2f}</div>", unsafe_allow_html=True)
+    prediction = model.predict(input_processed)
+    st.markdown(f"<div class='prediction-box'>Predicted Charging Demand: {prediction[0]:.2f}</div>", unsafe_allow_html=True)
 
+# Display Nearby Charging Stations on Map
 if lat and lon:
     m = folium.Map(location=[lat, lon], zoom_start=12)
+    folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
+    stations = get_nearby_ev_stations(lat, lon)
+    for station in stations:
+        folium.Marker([station['AddressInfo']['Latitude'], station['AddressInfo']['Longitude']],
+                      popup=station['AddressInfo']['Title'],
+                      icon=folium.Icon(color="green")).add_to(m)
     folium_static(m)
 
 st.markdown("<p style='text-align: center; color: #a0a0a0;'>🚀 Built with ❤️ using Streamlit | AI-Powered ⚡</p>", unsafe_allow_html=True)
