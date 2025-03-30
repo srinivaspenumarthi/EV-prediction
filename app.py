@@ -107,9 +107,15 @@ with tab2:
                 st.warning("⚠️ Unable to retrieve precise location. Check your browser settings.")
     
     if lat and lon:
+        stations = get_nearby_ev_stations(lat, lon)
+        if stations:
+            station_data = pd.DataFrame([
+                {"Name": s['AddressInfo']['Title'], "Distance (km)": s.get('Distance', 'N/A')} for s in stations
+            ])
+            st.table(station_data)
+        
         m = folium.Map(location=[lat, lon], zoom_start=12)
         folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
-        stations = get_nearby_ev_stations(lat, lon)
         for station in stations:
             folium.Marker([station['AddressInfo']['Latitude'], station['AddressInfo']['Longitude']],
                           popup=station['AddressInfo']['Title'],
