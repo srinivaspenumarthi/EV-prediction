@@ -17,7 +17,12 @@ preprocessor = ColumnTransformer([
     ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
 ])
 
-# Load dataset for statistical imputation
+# Load dataset for preprocessing fitting
+try:
+    dataset = pd.read_csv("station_data_dataverse.csv")
+    preprocessor.fit(dataset[numeric_cols + categorical_cols])
+except Exception as e:
+    st.error("Error loading dataset for preprocessing: " + str(e))
 
 
 # Streamlit UI
