@@ -18,8 +18,7 @@ preprocessor = ColumnTransformer([
 ])
 
 # Load dataset for statistical imputation
-data = pd.read_csv("station_data_dataverse.csv")
-median_charging_speed = data["kwhTotal"].median() / (data["chargeTimeHrs"].median() + 1e-6)
+charging_speed = 5.809629 / (2.841488 + 1e-6)
 
 # Streamlit UI
 st.title("XGBoost Prediction App")
@@ -29,8 +28,8 @@ st.write("Enter input features to get a prediction")
 def user_input():
     station_id = st.number_input("Station ID", value=0)
     distance = st.number_input("Distance (km)", value=0.0)
-    platform = st.selectbox("Platform", ["A", "B", "C"])
-    facility_type = st.selectbox("Facility Type", ["Parking", "Charging Hub", "Other"])
+    platform = st.selectbox("Platform", ["android", "ios", "web"])
+    facility_type = st.selectbox("Facility Type", [1, 2, 3, 4])
     start_time = st.time_input("Start Time")
     start_date = st.date_input("Start Date")
     
@@ -42,7 +41,7 @@ def user_input():
     season = 1 if start_month in [12, 1, 2] else 2 if start_month in [3, 4, 5] else 3 if start_month in [6, 7, 8] else 4
     
     # Compute charging speed using median if missing
-    charging_speed = median_charging_speed
+    charging_speed = 5.809629 / (2.841488 + 1e-6)
     
     return pd.DataFrame({
         "stationId": [station_id],
