@@ -17,6 +17,10 @@ preprocessor = ColumnTransformer([
     ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
 ])
 
+# Load dataset for statistical imputation
+data = pd.read_csv("station_data_dataverse.csv")
+median_charging_speed = data["kwhTotal"].median() / (data["chargeTimeHrs"].median() + 1e-6)
+
 # Streamlit UI
 st.title("XGBoost Prediction App")
 st.write("Enter input features to get a prediction")
@@ -29,8 +33,6 @@ def user_input():
     facility_type = st.selectbox("Facility Type", ["Parking", "Charging Hub", "Other"])
     start_time = st.time_input("Start Time")
     start_date = st.date_input("Start Date")
-    kwh_total = st.number_input("Total kWh", value=0.0)
-    charge_time_hrs = st.number_input("Charge Time (hrs)", value=0.0)
     
     # Compute derived features
     start_hour = start_time.hour
@@ -38,7 +40,9 @@ def user_input():
     is_peak_hour = 1 if start_hour in [7, 8, 9, 17, 18, 19, 20] else 0
     is_weekend = 1 if start_date.weekday() >= 5 else 0
     season = 1 if start_month in [12, 1, 2] else 2 if start_month in [3, 4, 5] else 3 if start_month in [6, 7, 8] else 4
-    charging_speed = kwh_total / (charge_time_hrs + 1e-6)  # Avoid division by zero
+    
+    # Compute charging speed using median if missing
+    charging_speed = median_charging_speed
     
     return pd.DataFrame({
         "stationId": [station_id],
