@@ -27,12 +27,18 @@ def user_input():
     distance = st.number_input("Distance (km)", value=0.0)
     platform = st.selectbox("Platform", ["A", "B", "C"])
     facility_type = st.selectbox("Facility Type", ["Parking", "Charging Hub", "Other"])
-    start_hour = st.number_input("Start Hour", min_value=0, max_value=23, value=12)
-    is_peak_hour = st.selectbox("Is Peak Hour", [0, 1])
-    is_weekend = st.selectbox("Is Weekend", [0, 1])
-    start_month = st.number_input("Start Month", min_value=1, max_value=12, value=1)
-    season = st.selectbox("Season", ["Winter", "Spring", "Summer", "Fall"])
-    charging_speed = st.number_input("Charging Speed (kW)", value=0.0)
+    start_time = st.time_input("Start Time")
+    start_date = st.date_input("Start Date")
+    kwh_total = st.number_input("Total kWh", value=0.0)
+    charge_time_hrs = st.number_input("Charge Time (hrs)", value=0.0)
+    
+    # Compute derived features
+    start_hour = start_time.hour
+    start_month = start_date.month
+    is_peak_hour = 1 if start_hour in [7, 8, 9, 17, 18, 19, 20] else 0
+    is_weekend = 1 if start_date.weekday() >= 5 else 0
+    season = 1 if start_month in [12, 1, 2] else 2 if start_month in [3, 4, 5] else 3 if start_month in [6, 7, 8] else 4
+    charging_speed = kwh_total / (charge_time_hrs + 1e-6)  # Avoid division by zero
     
     return pd.DataFrame({
         "stationId": [station_id],
@@ -59,10 +65,10 @@ if st.button("Predict"):
     
     # Get predictions for both outputs
     predictions = model.predict(input_processed)
-    kwh_total, charge_time_hrs = predictions[0]
+    kwh_total_pred, charge_time_hrs_pred = predictions[0]
     
-    st.success(f"Predicted kWh Total: {kwh_total}")
-    st.success(f"Predicted Charge Time (hrs): {charge_time_hrs}")
+    st.success(f"Predicted kWh Total: {kwh_total_pred}")
+    st.success(f"Predicted Charge Time (hrs): {charge_time_hrs_pred}")
 
 if __name__ == "__main__":
     st.write("App is running...")
