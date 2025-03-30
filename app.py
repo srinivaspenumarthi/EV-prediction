@@ -95,6 +95,11 @@ def get_coordinates(city):
         return float(response['results'][0]['geometry']['lat']), float(response['results'][0]['geometry']['lng'])
     return None, None
 
+def get_nearby_ev_stations(lat, lon):
+    api_url = f"https://api.openchargemap.io/v3/poi/?output=json&latitude={lat}&longitude={lon}&maxresults=5&key=a1f5b87f-3209-4eb2-afc1-c9d379acfa10"
+    response = requests.get(api_url).json()
+    return response
+
 lat, lon = None, None
 if city_name:
     lat, lon = get_coordinates(city_name)
@@ -138,6 +143,11 @@ with col1:
 if lat and lon:
     m = folium.Map(location=[lat, lon], zoom_start=12)
     folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
+    stations = get_nearby_ev_stations(lat, lon)
+    for station in stations:
+        folium.Marker([station['AddressInfo']['Latitude'], station['AddressInfo']['Longitude']],
+                      popup=station['AddressInfo']['Title'],
+                      icon=folium.Icon(color="green")).add_to(m)
     folium_static(m)
 
 st.markdown("<p style='text-align: center; color: #a0a0a0;'>🚀 Built with ❤️ using Streamlit | AI-Powered ⚡</p>", unsafe_allow_html=True)
