@@ -87,6 +87,12 @@ st.write("---")
 
 # Get User Location
 location = get_geolocation()
+if location and isinstance(location, dict) and 'coords' in location:
+    lat, lon = location['coords']['latitude'], location['coords']['longitude']
+    st.success(f"📍 Your Location: {lat}, {lon}")
+else:
+    st.warning("⚠️ Unable to retrieve location. Check your browser settings.")
+    lat, lon = None, None
 
 # Layout: Split into Two Columns
 col1, col2 = st.columns(2)
@@ -126,10 +132,7 @@ with col2:
 st.write("---")
 
 # Display Nearby Charging Stations on Map
-if location:
-    lat, lon = location['lat'], location['lon']
-    st.success(f"📍 Your Location: {lat}, {lon}")
-    
+if lat and lon:
     api_url = f"https://api.openchargemap.io/v3/poi/?latitude={lat}&longitude={lon}&distance=10&maxresults=10&key=a1f5b87f-3209-4eb2-afc1-c9d379acfa10"
     response = requests.get(api_url).json()
 
