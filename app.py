@@ -138,13 +138,18 @@ with col1:
     input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
     input_data['season'] = 1 if input_data['startMonth'] in [12, 1, 2] else 2 if input_data['startMonth'] in [3, 4, 5] else 3 if input_data['startMonth'] in [6, 7, 8] else 4
     input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
+with col2:
+    st.subheader("🎯 Prediction Output")
+    if st.button("🚀 Predict Now"):
+        input_df = pd.DataFrame([input_data])
+        input_processed = preprocessor.transform(input_df)
+        predictions = model.predict(input_processed)
+        kwh_total_pred, charge_time_hrs_pred = predictions[0]
+        
+        # Display Predictions
+        st.markdown(f"<div class='prediction-box'>🔋 Predicted kWh Total: {kwh_total_pred:.4f} kWh</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='prediction-box'>⏳ Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs</div>", unsafe_allow_html=True)
 
-# Predict Button
-if st.button("Predict"):
-    input_df = pd.DataFrame([input_data])
-    input_processed = preprocessor.transform(input_df)
-    prediction = model.predict(input_processed)
-    st.markdown(f"<div class='prediction-box'>Predicted Charging Demand: {prediction[0]:.2f}</div>", unsafe_allow_html=True)
 
 # Display Nearby Charging Stations on Map
 if lat and lon:
