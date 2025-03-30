@@ -8,6 +8,7 @@ from sklearn.compose import ColumnTransformer
 from streamlit_js_eval import get_geolocation
 import folium
 from streamlit_folium import folium_static
+from geopy.geocoders import Nominatim
 
 # Load the trained XGBoost model
 model_filename = "xgboost_ev_model.pkl"
@@ -85,8 +86,21 @@ st.markdown("<h1 class='title'>⚡ EV Charging Prediction AI</h1>", unsafe_allow
 st.markdown("<p class='subtitle'>AI-powered predictions for Electric Vehicle charging analysis</p>", unsafe_allow_html=True)
 st.write("---")
 
-# Get User Location
-location = get_geolocation()
+# Get User Location or Search by City
+city_name = st.text_input("Enter a city name to search (optional):", "")
+geolocator = Nominatim(user_agent="geoapiExercises")
+
+if city_name:
+    location = geolocator.geocode(city_name)
+    if location:
+        lat, lon = location.latitude, location.longitude
+        st.success(f"📍 Location set to: {city_name} ({lat}, {lon})")
+    else:
+        st.warning("⚠️ Could not find the entered city. Using default user location.")
+        location = get_geolocation()
+else:
+    location = get_geolocation()
+
 if location and isinstance(location, dict) and 'coords' in location:
     lat, lon = location['coords']['latitude'], location['coords']['longitude']
     st.success(f"📍 Your Location: {lat}, {lon}")
@@ -116,37 +130,10 @@ with col1:
     input_data['season'] = 1 if input_data['startMonth'] in [12, 1, 2] else 2 if input_data['startMonth'] in [3, 4, 5] else 3 if input_data['startMonth'] in [6, 7, 8] else 4
     input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
 
-# Make Predictions
-with col2:
-    st.subheader("🎯 Prediction Output")
-    if st.button("🚀 Predict Now"):
-        input_df = pd.DataFrame([input_data])
-        input_processed = preprocessor.transform(input_df)
-        predictions = model.predict(input_processed)
-        kwh_total_pred, charge_time_hrs_pred = predictions[0]
-
-        # Display Predictions
-        st.markdown(f"<div class='prediction-box'>🔋 Predicted kWh Total: {kwh_total_pred:.4f} kWh</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='prediction-box'>⏳ Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs</div>", unsafe_allow_html=True)
-
-st.write("---")
-
 # Display Nearby Charging Stations on Map
 if lat and lon:
-    api_url = f"https://api.openchargemap.io/v3/poi/?latitude={lat}&longitude={lon}&distance=10&maxresults=10&key=a1f5b87f-3209-4eb2-afc1-c9d379acfa10"
-    response = requests.get(api_url).json()
-
     m = folium.Map(location=[lat, lon], zoom_start=12)
     folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
-
-    for station in response:
-        loc = station["AddressInfo"]
-        folium.Marker(
-            [loc["Latitude"], loc["Longitude"]],
-            popup=f"{loc['Title']} - {loc['AddressLine1']}",
-            icon=folium.Icon(color="green")
-        ).add_to(m)
-
     folium_static(m)
 
 st.markdown("<p style='text-align: center; color: #a0a0a0;'>🚀 Built with ❤️ using Streamlit | AI-Powered ⚡</p>", unsafe_allow_html=True)
