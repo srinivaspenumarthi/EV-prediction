@@ -84,14 +84,14 @@ with tab2:
     city_name = st.text_input("Enter a city or address:", placeholder="e.g., New York, NY")
     
     def get_coordinates(city):
-        url = f"https://api.opencagedata.com/geocode/v1/json?q={city}&key=YOUR_API_KEY"
+        url = f"https://api.opencagedata.com/geocode/v1/json?q={city}&key=4cda5084fabf428aa8e6564d16b7ad8c"
         response = requests.get(url).json()
         if response and 'results' in response and len(response['results']) > 0:
             return float(response['results'][0]['geometry']['lat']), float(response['results'][0]['geometry']['lng'])
         return None, None
     
     def get_nearby_ev_stations(lat, lon):
-        api_url = f"https://api.openchargemap.io/v3/poi/?output=json&latitude={lat}&longitude={lon}&maxresults=10&key=YOUR_API_KEY"
+        api_url = f"https://api.openchargemap.io/v3/poi/?output=json&latitude={lat}&longitude={lon}&maxresults=10&key=a1f5b87f-3209-4eb2-afc1-c9d379acfa10"
         response = requests.get(api_url).json()
         return response
     
