@@ -12,7 +12,10 @@ with open("xgboost_ev_model.pkl", "rb") as file:
 # Define preprocessing pipeline
 categorical_cols = ['platform', 'facilityType', 'season']
 numeric_cols = ['stationId', 'distance', 'startHour', 'is_peak_hour', 'is_weekend', 'startMonth', 'charging_speed']
-preprocessor = pickle.load(open("preprocessor.pkl", "rb"))
+preprocessor = ColumnTransformer([
+    ('num', StandardScaler(), numeric_cols),
+    ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
+])
 
 # Load dataset for statistical imputation
 charging_speed = input_df['charging_speed'][0] if 'charging_speed' in input_df.columns and not pd.isnull(input_df['charging_speed'][0]) else 5.809629 / (2.841488 + 1e-6)
