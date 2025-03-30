@@ -280,16 +280,7 @@ with tab1:
                 today = datetime.now()
                 start_date = st.date_input("Start Date", today)
             
-            # Charging Speed with a slider for better UX
-            st.subheader("🔋 Charging Parameters")
-            input_data['charging_speed'] = st.slider(
-                "Charging Speed (kW)",
-                min_value=1.0,
-                max_value=10.0,
-                value=5.8,
-                step=0.1,
-                help="Higher values mean faster charging"
-            )
+            
             
             # Compute derived features
             input_data['startHour'] = start_time.hour
