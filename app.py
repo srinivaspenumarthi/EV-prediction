@@ -2,8 +2,12 @@ import streamlit as st
 import joblib
 import pandas as pd
 import numpy as np
+import requests
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
+from streamlit_js_eval import get_geolocation
+import folium
+from streamlit_folium import folium_static
 
 # Load the trained XGBoost model
 model_filename = "xgboost_ev_model.pkl"
@@ -81,6 +85,38 @@ st.markdown("<h1 class='title'>⚡ EV Charging Prediction AI</h1>", unsafe_allow
 st.markdown("<p class='subtitle'>AI-powered predictions for Electric Vehicle charging analysis</p>", unsafe_allow_html=True)
 st.write("---")
 
+# Get User Location or Search by City
+city_name = st.text_input("Enter a city name to search (optional):", "")
+
+def get_coordinates(city):
+    url = f"https://api.opencagedata.com/geocode/v1/json?q={city}&key=4cda5084fabf428aa8e6564d16b7ad8c"
+    response = requests.get(url).json()
+    if response and 'results' in response and len(response['results']) > 0:
+        return float(response['results'][0]['geometry']['lat']), float(response['results'][0]['geometry']['lng'])
+    return None, None
+
+def get_nearby_ev_stations(lat, lon):
+    api_url = f"https://api.openchargemap.io/v3/poi/?output=json&latitude={lat}&longitude={lon}&maxresults=5&key=a1f5b87f-3209-4eb2-afc1-c9d379acfa10"
+    response = requests.get(api_url).json()
+    return response
+
+lat, lon = None, None
+if city_name:
+    lat, lon = get_coordinates(city_name)
+    if lat and lon:
+        st.success(f"📍 Location set to: {city_name} ({lat}, {lon})")
+    else:
+        st.warning("⚠️ Could not find the entered city. Using default user location.")
+
+if lat is None or lon is None:
+    location = get_geolocation()
+    if location and isinstance(location, dict) and 'coords' in location:
+        lat, lon = location['coords'].get('latitude'), location['coords'].get('longitude')
+        if lat and lon:
+            st.success(f"📍 Your Location: {lat}, {lon}")
+        else:
+            st.warning("⚠️ Unable to retrieve precise location. Check your browser settings.")
+
 # Layout: Split into Two Columns
 col1, col2 = st.columns(2)
 
@@ -102,8 +138,6 @@ with col1:
     input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
     input_data['season'] = 1 if input_data['startMonth'] in [12, 1, 2] else 2 if input_data['startMonth'] in [3, 4, 5] else 3 if input_data['startMonth'] in [6, 7, 8] else 4
     input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
-
-# Make Predictions
 with col2:
     st.subheader("🎯 Prediction Output")
     if st.button("🚀 Predict Now"):
@@ -116,5 +150,14 @@ with col2:
         st.markdown(f"<div class='prediction-box'>🔋 Predicted kWh Total: {kwh_total_pred:.4f} kWh</div>", unsafe_allow_html=True)
         st.markdown(f"<div class='prediction-box'>⏳ Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs</div>", unsafe_allow_html=True)
 
-st.write("---")
-st.markdown("<p style='text-align: center; color: #a0a0a0;'>🚀 Built with ❤️ using Streamlit | AI-Powered ⚡</p>", unsafe_allow_html=True)
+
+# Display Nearby Charging Stations on Map
+if lat and lon:
+    m = folium.Map(location=[lat, lon], zoom_start=12)
+    folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
+    stations = get_nearby_ev_stations(lat, lon)
+    for station in stations:
+        folium.Marker([station['AddressInfo']['Latitude'], station['AddressInfo']['Longitude']],
+                      popup=station['AddressInfo']['Title'],
+                      icon=folium.Icon(color="green")).add_to(m)
+    folium_static(m)
