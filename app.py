@@ -1,8 +1,8 @@
 import streamlit as st 
 import joblib 
 import numpy as np 
-import time from sklearn.ensemble 
-import RandomForestRegressor
+import time 
+from sklearn.ensemble import RandomForestRegressor
 
 Load the trained model
 
