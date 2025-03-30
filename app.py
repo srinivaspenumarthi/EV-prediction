@@ -323,7 +323,7 @@ with tab1:
             st.markdown("</ul></div>", unsafe_allow_html=True)
             
             # Submit button
-            predict_button = st.form_submit_button(label=" Generate Prediction")
+            predict_button = st.form_submit_button(label="🚀 Generate Prediction")
         
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -362,9 +362,9 @@ with tab1:
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
-                
+                """
                 # Additional metrics (cost and environmental impact)
-                """avg_electricity_cost = 0.15  # $/kWh
+                avg_electricity_cost = 0.15  # $/kWh
                 cost_estimate = kwh_total_pred * avg_electricity_cost
                 co2_saved = kwh_total_pred * 0.4  # kg CO2 equivalent
                 
@@ -402,8 +402,7 @@ with tab1:
                     tips.append("Your charging efficiency is below average. Check battery health.")
                 
                 for tip in tips:
-                    st.markdown(f"<div style='background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #4CAF50;'>{tip}</div>", unsafe_allow_html=True)
-        """
+                    st.markdown(f"<div style='background: rgba(76, 175, 80, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #4CAF50;'>{tip}</div>", unsafe_allow_html=True) """
         else:
             # Default display when no prediction has been made
             st.markdown("""
