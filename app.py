@@ -38,7 +38,6 @@ tab1, tab2 = st.tabs(["🔢 Prediction", "📍 Location & Maps"])
 
 with tab1:
     st.markdown("##  EV Charging Prediction ")
-    st.write("AI-powered predictions for Electric Vehicle charging analysis")
     st.write("---")
 
     # Layout: Split into Two Columns
