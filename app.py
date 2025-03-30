@@ -89,10 +89,10 @@ st.write("---")
 city_name = st.text_input("Enter a city name to search (optional):", "")
 
 def get_coordinates(city):
-    url = f"https://nominatim.openstreetmap.org/search?format=json&q={city}"
+    url = f"https://api.opencagedata.com/geocode/v1/json?q={city}&key=4cda5084fabf428aa8e6564d16b7ad8c"
     response = requests.get(url).json()
-    if response:
-        return float(response[0]["lat"]), float(response[0]["lon"])
+    if response and 'results' in response and len(response['results']) > 0:
+        return float(response['results'][0]['geometry']['lat']), float(response['results'][0]['geometry']['lng'])
     return None, None
 
 if city_name:
