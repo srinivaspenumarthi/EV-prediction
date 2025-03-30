@@ -1,6 +1,10 @@
 streamlit
-joblib
 pandas
-scikit-learn
 numpy
+scikit-learn
+joblib
 xgboost
+plotly
+folium
+geopy
+requests
