@@ -8,6 +8,7 @@ from sklearn.compose import ColumnTransformer
 from streamlit_js_eval import get_geolocation
 import folium
 from streamlit_folium import folium_static
+from geopy.distance import geodesic
 
 # Load the trained XGBoost model
 model_filename = "xgboost_ev_model.pkl"
@@ -36,7 +37,7 @@ st.set_page_config(page_title="EV Charging AI 🚀", layout="wide")
 tab1, tab2 = st.tabs(["🔢 Prediction", "📍 Location & Maps"])
 
 with tab1:
-    st.markdown("## ⚡ EV Charging Prediction AI")
+    st.markdown("##  EV Charging Prediction ")
     st.write("AI-powered predictions for Electric Vehicle charging analysis")
     st.write("---")
 
@@ -110,7 +111,9 @@ with tab2:
         stations = get_nearby_ev_stations(lat, lon)
         if stations:
             station_data = pd.DataFrame([
-                {"Name": s['AddressInfo']['Title'], "Distance (km)": s.get('Distance', 'N/A')} for s in stations
+                {"Name": s['AddressInfo']['Title'], 
+                 "Distance (km)": geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km} 
+                for s in stations
             ])
             st.table(station_data)
         
