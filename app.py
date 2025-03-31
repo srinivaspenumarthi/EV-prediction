@@ -9,6 +9,11 @@ from streamlit_js_eval import get_geolocation
 import folium
 from streamlit_folium import folium_static
 from geopy.distance import geodesic
+st.markdown("""
+<head>
+    <meta name="google-site-verification" content="vtJTckje8leqwe18yRVMqZBH5lkfrNOnp4fL2KyzHyY" />
+</head>
+""", unsafe_allow_html=True)
 
 # Load the trained XGBoost model
 model_filename = "xgboost_ev_model.pkl"
