@@ -39,11 +39,6 @@ tab1, tab2 = st.tabs(["🔢 Prediction", "📍 Location & Maps"])
 with tab1:
     st.markdown("##  EV Charging Prediction ")
     st.write("---")
-    st.markdown("""
-        <head>
-            <meta name="google-site-verification" content="vtJTckje8leqwe18yRVMqZBH5lkfrNOnp4fL2KyzHyY" />
-        </head>
-    """, unsafe_allow_html=True)
    
 
 
