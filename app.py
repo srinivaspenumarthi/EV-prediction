@@ -80,7 +80,7 @@ with tab2:
     city_name = st.text_input("Enter a city name to search (optional):", "")
     
     def get_coordinates(city):
-        url = f"https://api.opencagedata.com/geocode/v1/json?q={city}&key=4cda5084fabf428aa8e6564d16b7ad8c"
+        url = f"https://api.opencagedata.com/geocode/v1/json?q={city}&key=3518ba3e6620418cab166e34afd6ad4e"
         response = requests.get(url).json()
         if response and 'results' in response and len(response['results']) > 0:
             return float(response['results'][0]['geometry']['lat']), float(response['results'][0]['geometry']['lng'])
