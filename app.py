@@ -75,8 +75,8 @@ with tab1:
             input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
 
         with col2:
-            st.subheader("\ud83c\udfaf Prediction Results")
-            if st.button("\ud83d\ude80 Predict Now"):
+            st.subheader("Prediction Results")
+            if st.button(" Predict Now"):
                 input_df = pd.DataFrame([input_data])
                 input_processed = preprocessor.transform(input_df)
                 predictions = model.predict(input_processed)
