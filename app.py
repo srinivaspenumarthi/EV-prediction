@@ -9,6 +9,7 @@ from streamlit_js_eval import get_geolocation
 import folium
 from streamlit_folium import folium_static
 from geopy.distance import geodesic
+from streamlit_lottie import st_lottie
 
 # Load the trained XGBoost model
 model_filename = "xgboost_ev_model.pkl"
@@ -33,19 +34,28 @@ preprocessor.fit(dummy_data)
 # Custom Styling
 st.set_page_config(page_title="EV Charging AI 🚀", layout="wide")
 
+# Load Lottie animation for loading state
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+with st.spinner("Loading experience..."):
+    lottie_json = load_lottieurl("https://assets4.lottiefiles.com/packages/lf20_tljjah.json")
+    st_lottie(lottie_json, height=250)
+
 # Tabs for Prediction and Location
 tab1, tab2 = st.tabs(["🔢 Prediction", "📍 Location & Maps"])
 
 with tab1:
-    st.markdown("##  EV Charging Prediction ")
+    st.markdown("## EV Charging Prediction")
     st.write("---")
-   
-
 
     # Layout: Split into Two Columns
     col1, col2 = st.columns(2)
     input_data = {}
-    
+
     with col1:
         st.subheader("🔢 Enter Feature Values")
         input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
@@ -54,7 +64,7 @@ with tab1:
         input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
         start_time = st.time_input("Start Time")
         start_date = st.date_input("Start Date")
-    
+
         # Compute derived features
         input_data['startHour'] = start_time.hour
         input_data['startMonth'] = start_date.month
@@ -70,7 +80,7 @@ with tab1:
             input_processed = preprocessor.transform(input_df)
             predictions = model.predict(input_processed)
             kwh_total_pred, charge_time_hrs_pred = predictions[0]
-            
+
             # Display Predictions
             st.success(f"🔋 Predicted kWh Total: {kwh_total_pred:.4f} kWh")
             st.success(f"⏳ Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
@@ -78,19 +88,19 @@ with tab1:
 with tab2:
     st.markdown("## 📍 Location & Nearby Charging Stations")
     city_name = st.text_input("Enter a city name to search (optional):", "")
-    
+
     def get_coordinates(city):
         url = f"https://api.opencagedata.com/geocode/v1/json?q={city}&key=3518ba3e6620418cab166e34afd6ad4e"
         response = requests.get(url).json()
         if response and 'results' in response and len(response['results']) > 0:
             return float(response['results'][0]['geometry']['lat']), float(response['results'][0]['geometry']['lng'])
         return None, None
-    
+
     def get_nearby_ev_stations(lat, lon):
         api_url = f"https://api.openchargemap.io/v3/poi/?output=json&latitude={lat}&longitude={lon}&maxresults=5&key=a1f5b87f-3209-4eb2-afc1-c9d379acfa10"
         response = requests.get(api_url).json()
         return response
-    
+
     lat, lon = None, None
     if city_name:
         lat, lon = get_coordinates(city_name)
@@ -98,7 +108,7 @@ with tab2:
             st.success(f"📍 Location set to: {city_name} ({lat}, {lon})")
         else:
             st.warning("⚠️ Could not find the entered city. Using default user location.")
-    
+
     if lat is None or lon is None:
         location = get_geolocation()
         if location and isinstance(location, dict) and 'coords' in location:
@@ -107,21 +117,19 @@ with tab2:
                 st.success(f"📍 Your Location: {lat}, {lon}")
             else:
                 st.warning("⚠️ Unable to retrieve precise location. Check your browser settings.")
-    
+
     if lat and lon:
         stations = get_nearby_ev_stations(lat, lon)
         if stations:
             station_data = pd.DataFrame([
-                {"Name": s['AddressInfo']['Title'], 
-                 "Distance (km)": geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km} 
+                {"Name": s['AddressInfo']['Title'],
+                 "Distance (km)": geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km}
                 for s in stations
             ])
             st.table(station_data)
-        
+
         m = folium.Map(location=[lat, lon], zoom_start=12)
         folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
-        for station in stations:
-            folium.Marker([station['AddressInfo']['Latitude'], station['AddressInfo']['Longitude']],
-                          popup=station['AddressInfo']['Title'],
-                          icon=folium.Icon(color="green")).add_to(m)
-        folium_static(m)
+        for station
+::contentReference[oaicite:0]{index=0}
+ 
