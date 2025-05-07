@@ -34,7 +34,7 @@ dummy_data = pd.DataFrame({
 preprocessor.fit(dummy_data)
 
 # Config
-st.set_page_config(page_title="EV Charging AI", layout="wide")
+st.set_page_config(page_title="EV Prediction", layout="wide")
 
 # Initialize session state variables for location refresh
 if 'last_refresh' not in st.session_state:
@@ -61,7 +61,7 @@ col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
     if lottie_json:
         st_lottie(lottie_json, height=350, speed=1.5)
-    st.markdown("<h1 style='margin-top: -30px;'>EV Charging System</h1>") 
+    st.markdown("<h1 style='margin-top: -30px;'>EV Charging System</h1>", unsafe_allow_html=True)
 
 
 # Tabs
