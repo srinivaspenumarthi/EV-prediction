@@ -46,10 +46,10 @@ if lottie_json:
 
 # Tabs
 with st.container():
-    tab1, tab2 = st.tabs(["\ud83d\udd22 Prediction", "\ud83d\udccd Location & Maps"])
+    tab1, tab2 = st.tabs([" Prediction", "Location & Maps"])
 
 with tab1:
-    st.markdown("## \ud83c\udf1f EV Charging Demand Prediction")
+    st.markdown(" EV Charging Demand Prediction")
     with st.container():
         col1, col2 = st.columns([1.2, 1])
         input_data = {}
