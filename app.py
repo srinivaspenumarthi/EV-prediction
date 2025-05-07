@@ -34,9 +34,6 @@ preprocessor.fit(dummy_data)
 # Config
 st.set_page_config(page_title="EV Charging AI", layout="wide")
 
-# Auto-refresh every 15 seconds
-st_autorefresh(interval=15000, key="refresh")
-
 # Lottie loader
 @st.cache_data
 
@@ -52,6 +49,7 @@ if lottie_json:
 with st.container():
     tab1, tab2 = st.tabs([" Prediction", "Location & Maps"])
 
+# Prediction Tab
 with tab1:
     st.markdown(" EV Charging Demand Prediction")
     with st.container():
@@ -89,7 +87,10 @@ with tab1:
                 st.success(f" Predicted kWh Total: {kwh_total_pred:.4f} kWh")
                 st.success(f" Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
 
+# Location & Map Tab with Smart Refresh
 with tab2:
+    st_autorefresh(interval=15000, key="location_refresh")
+
     st.markdown("Location & Nearby Stations")
     city_name = st.text_input("Enter city name (optional):")
 
@@ -104,48 +105,19 @@ with tab2:
         url = f"https://api.openchargemap.io/v3/poi/?output=json&latitude={lat}&longitude={lon}&maxresults=5&key=a1f5b87f-3209-4eb2-afc1-c9d379acfa10"
         return requests.get(url).json()
 
-    def get_directions(start_lat, start_lon, end_lat, end_lon):
-        url = f"https://api.openrouteservice.org/v2/directions/driving-car"
-        headers = {"Authorization": "5b3ce3597851110001cf62483ee31511b8e745d0b635b37fbaeb4f57"}
-        params = {
-            "start": f"{start_lon},{start_lat}",
-            "end": f"{end_lon},{end_lat}"
-        }
-        response = requests.get(url, headers=headers, params=params)
-        if response.status_code == 200:
-            return response.json()['features'][0]['geometry']['coordinates']
-        return []
-
     lat, lon = None, None
     if city_name:
         lat, lon = get_coordinates(city_name)
-        if lat and lon:
-            st.success(f"Set to {city_name}: ({lat}, {lon})")
-    if not lat or not lon:
+    else:
         location = get_geolocation()
         if location and 'coords' in location:
             lat = location['coords'].get('latitude')
             lon = location['coords'].get('longitude')
-            if lat and lon:
-                st.success(f" Your Location: ({lat}, {lon})")
 
     if lat and lon:
-        stations = get_nearby_ev_stations(lat, lon)
-        if stations:
-            station_options = [s['AddressInfo']['Title'] for s in stations]
-            selected_station = st.selectbox("Select a station to show route:", station_options)
-            selected_info = next((s for s in stations if s['AddressInfo']['Title'] == selected_station), stations[0])
-            end_lat = selected_info['AddressInfo']['Latitude']
-            end_lon = selected_info['AddressInfo']['Longitude']
-
-            df = pd.DataFrame([{
-                "Name": s['AddressInfo']['Title'],
-                "Distance (km)": geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km
-            } for s in stations])
-            st.dataframe(df)
-
-            m = folium.Map(location=[lat, lon], zoom_start=13)
-            folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
+        if 'map' not in st.session_state or 'stations' not in st.session_state:
+            stations = get_nearby_ev_stations(lat, lon)
+            m = folium.Map(location=[lat, lon], zoom_start=12)
 
             for s in stations:
                 folium.Marker(
@@ -154,11 +126,19 @@ with tab2:
                     icon=folium.Icon(color="green", icon="bolt", prefix='fa')
                 ).add_to(m)
 
-            route_coords = get_directions(lat, lon, end_lat, end_lon)
-            if route_coords:
-                folium.PolyLine(locations=[(coord[1], coord[0]) for coord in route_coords], color='red', weight=4).add_to(m)
+            st.session_state.map = m
+            st.session_state.stations = stations
 
-            folium_static(m)
+        m = st.session_state.map
+        folium.Marker([lat, lon], popup="Your Location", icon=folium.Icon(color="blue")).add_to(m)
+
+        df = pd.DataFrame([{
+            "Name": s['AddressInfo']['Title'],
+            "Distance (km)": geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km
+        } for s in st.session_state.stations])
+        st.dataframe(df)
+
+        folium_static(m)
 
 # Premium CSS
 st.markdown("""
