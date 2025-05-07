@@ -111,7 +111,7 @@ with tab2:
             lat = location['coords'].get('latitude')
             lon = location['coords'].get('longitude')
             if lat and lon:
-                st.success(f"\ud83d\udccd Your Location: ({lat}, {lon})")
+                st.success(f" Your Location: ({lat}, {lon})")
 
     if lat and lon:
         stations = get_nearby_ev_stations(lat, lon)
