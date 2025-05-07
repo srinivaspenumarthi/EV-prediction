@@ -1,13 +1,12 @@
 streamlit
 pandas
 numpy
-scikit-learn
 joblib
-xgboost
-plotly
+scikit-learn
 folium
 geopy
 requests
 streamlit_folium
-streamlit-js-eval
-streamlit-lottie
+streamlit_js_eval
+streamlit_lottie
+polyline
