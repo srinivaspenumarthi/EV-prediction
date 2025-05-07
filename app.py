@@ -82,11 +82,11 @@ with tab1:
                 predictions = model.predict(input_processed)
                 kwh_total_pred, charge_time_hrs_pred = predictions[0]
 
-                st.success(f"\ud83d\udd0b Predicted kWh Total: {kwh_total_pred:.4f} kWh")
-                st.success(f"\u23f3 Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
+                st.success(f" Predicted kWh Total: {kwh_total_pred:.4f} kWh")
+                st.success(f" Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
 
 with tab2:
-    st.markdown("## \ud83d\udccd Location & Nearby Stations")
+    st.markdown("Location & Nearby Stations")
     city_name = st.text_input("Enter city name (optional):")
 
     def get_coordinates(city):
