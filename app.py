@@ -56,14 +56,14 @@ col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
     if lottie_json:
         st_lottie(lottie_json, height=220, speed=1.2)
-    st.title("EV Charging Smart System")
+    st.title("EV Charging System")
 
 # Tabs
 with st.container():
     tab1, tab2 = st.tabs(["⚡ Prediction", "📍 Location & Maps"])
 
 with tab1:
-    st.markdown("## EV Charging Demand Prediction")
+    st.markdown("## EV Charging Prediction")
     with st.container():
         col1, col2 = st.columns([1.2, 1])
         input_data = {}
