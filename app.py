@@ -11,6 +11,8 @@ from streamlit_folium import folium_static
 from geopy.distance import geodesic
 from streamlit_lottie import st_lottie
 import time
+import json
+
 
 # Load model
 model = joblib.load("xgboost_ev_model.pkl")
@@ -46,17 +48,21 @@ if 'lon' not in st.session_state:
 
 # Lottie loader
 @st.cache_data
-def load_lottieurl(url: str):
-    r = requests.get(url)
-    return r.json() if r.status_code == 200 else None
+def load_lottiefile(filepath: str):
+    with open(filepath, "r") as f:
+        return json.load(f)
 
-# Load animation
-lottie_json = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_3rwasyjy.json")
+# Load the uploaded animation JSON
+lottie_json = load_lottiefile("Animation - 1746651823424.json")
+
+# Center layout using 3 columns
 col1, col2, col3 = st.columns([1, 3, 1])
+
 with col2:
     if lottie_json:
         st_lottie(lottie_json, height=220, speed=1.2)
     st.title("EV Charging System")
+
 
 # Tabs
 with st.container():
