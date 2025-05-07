@@ -10,11 +10,12 @@ import folium
 from streamlit_folium import folium_static
 from geopy.distance import geodesic
 from streamlit_lottie import st_lottie
+import time
 
 # Load model
 model = joblib.load("xgboost_ev_model.pkl")
 
-# Preprocessor
+# Define preprocessor
 categorical_cols = ['platform', 'facilityType', 'season']
 numeric_cols = ['stationId', 'distance', 'startHour', 'is_peak_hour', 'is_weekend', 'startMonth', 'charging_speed']
 preprocessor = ColumnTransformer([
@@ -30,62 +31,87 @@ dummy_data = pd.DataFrame({
 })
 preprocessor.fit(dummy_data)
 
-# Streamlit config
+# Config
 st.set_page_config(page_title="EV Charging AI", layout="wide")
 
-# Load lottie animation
+# Initialize session state variables for location refresh
+if 'last_refresh' not in st.session_state:
+    st.session_state.last_refresh = time.time()
+if 'refresh_location' not in st.session_state:
+    st.session_state.refresh_location = False
+if 'lat' not in st.session_state:
+    st.session_state.lat = None
+if 'lon' not in st.session_state:
+    st.session_state.lon = None
+
+# Lottie loader
 @st.cache_data
 def load_lottieurl(url: str):
     r = requests.get(url)
     return r.json() if r.status_code == 200 else None
 
+# Load animation
 lottie_json = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_3rwasyjy.json")
-if lottie_json:
-    st_lottie(lottie_json, height=220, speed=1.2)
+col1, col2, col3 = st.columns([1, 3, 1])
+with col2:
+    if lottie_json:
+        st_lottie(lottie_json, height=220, speed=1.2)
+    st.title("EV Charging Smart System")
 
 # Tabs
-tab1, tab2 = st.tabs(["Prediction", "Location & Maps"])
+with st.container():
+    tab1, tab2 = st.tabs(["⚡ Prediction", "📍 Location & Maps"])
 
 with tab1:
-    st.markdown("### EV Charging Demand Prediction")
-    col1, col2 = st.columns([1.5, 1])
-    input_data = {}
+    st.markdown("## EV Charging Demand Prediction")
+    with st.container():
+        col1, col2 = st.columns([1.2, 1])
+        input_data = {}
 
-    with col1:
-        st.subheader("Input Parameters")
-        input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
-        input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
-        input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
-        input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
-        start_time = st.time_input("Start Time")
-        start_date = st.date_input("Start Date")
+        with col1:
+            st.subheader("Input Parameters")
+            input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
+            input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
+            input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
+            input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
+            start_time = st.time_input("Start Time")
+            start_date = st.date_input("Start Date")
 
-        input_data['startHour'] = start_time.hour
-        input_data['startMonth'] = start_date.month
-        input_data['is_peak_hour'] = 1 if input_data['startHour'] in [7, 8, 9, 17, 18, 19, 20] else 0
-        input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
-        input_data['season'] = (
-            1 if input_data['startMonth'] in [12, 1, 2] else
-            2 if input_data['startMonth'] in [3, 4, 5] else
-            3 if input_data['startMonth'] in [6, 7, 8] else 4
-        )
-        input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
+            input_data['startHour'] = start_time.hour
+            input_data['startMonth'] = start_date.month
+            input_data['is_peak_hour'] = 1 if input_data['startHour'] in [7, 8, 9, 17, 18, 19, 20] else 0
+            input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
+            input_data['season'] = (
+                1 if input_data['startMonth'] in [12, 1, 2] else
+                2 if input_data['startMonth'] in [3, 4, 5] else
+                3 if input_data['startMonth'] in [6, 7, 8] else 4
+            )
+            input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
 
-    with col2:
-        st.subheader("Prediction Results")
-        if st.button("Predict Now"):
-            input_df = pd.DataFrame([input_data])
-            input_processed = preprocessor.transform(input_df)
-            predictions = model.predict(input_processed)
-            kwh_total_pred, charge_time_hrs_pred = predictions[0]
+        with col2:
+            st.subheader("Prediction Results")
+            if st.button("🔍 Predict Now", use_container_width=True):
+                input_df = pd.DataFrame([input_data])
+                input_processed = preprocessor.transform(input_df)
+                predictions = model.predict(input_processed)
+                kwh_total_pred, charge_time_hrs_pred = predictions[0]
 
-            st.success(f"Predicted kWh Total: {kwh_total_pred:.4f} kWh")
-            st.success(f"Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
+                st.success(f"⚡ Predicted kWh Total: {kwh_total_pred:.4f} kWh")
+                st.success(f"⏱️ Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
 
 with tab2:
-    st.markdown("### Location & Nearby Stations")
-    city_name = st.text_input("Enter city name (optional):")
-    refresh_location = st.button("Refresh My Location")
+    st.markdown("## Location & Nearby Stations")
+    
+    # Location refresh functions
+    def refresh_location():
+        st.session_state.refresh_location = True
+        st.session_state.last_refresh = time.time()
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        city_name = st.text_input("Enter city name (optional):")
+    with col2:
+        st.button("🔄 Refresh Location", on_click=refresh_location, use_container_width=True)
 
     def get_coordinates(city):
         url = f"https://api.opencagedata.com/geocode/v1/json?q={city}&key=3518ba3e6620418cab166e34afd6ad4e"
@@ -110,19 +136,36 @@ with tab2:
             return response.json()['features'][0]['geometry']['coordinates']
         return []
 
+    # Location logic
     lat, lon = None, None
+    
     if city_name:
         lat, lon = get_coordinates(city_name)
         if lat and lon:
-            st.success(f"Set to {city_name}: ({lat}, {lon})")
-    elif refresh_location:
+            st.session_state.lat = lat
+            st.session_state.lon = lon
+            st.success(f"📍 Set to {city_name}: ({lat}, {lon})")
+    
+    # Use get_geolocation if needed
+    if st.session_state.refresh_location or not st.session_state.lat or not st.session_state.lon:
+        location_placeholder = st.empty()
+        with location_placeholder:
+            st.info("📡 Getting your location...")
+        
         location = get_geolocation()
         if location and 'coords' in location:
             lat = location['coords'].get('latitude')
             lon = location['coords'].get('longitude')
             if lat and lon:
-                st.success(f"Your Location: ({lat}, {lon})")
+                st.session_state.lat = lat
+                st.session_state.lon = lon
+                location_placeholder.success(f"📍 Your Location: ({lat}, {lon})")
+                st.session_state.refresh_location = False
+    else:
+        lat = st.session_state.lat
+        lon = st.session_state.lon
 
+    # Show map and stations if we have location
     if lat and lon:
         stations = get_nearby_ev_stations(lat, lon)
         if stations:
@@ -134,89 +177,136 @@ with tab2:
 
             df = pd.DataFrame([{
                 "Name": s['AddressInfo']['Title'],
-                "Distance (km)": geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km
+                "Distance (km)": round(geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km, 2),
+                "Status": "Available" if s.get('StatusType', {}).get('IsOperational', True) else "Unavailable"
             } for s in stations])
-            st.dataframe(df)
+            st.dataframe(df, use_container_width=True)
 
             m = folium.Map(location=[lat, lon], zoom_start=13)
-            folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
+            folium.Marker([lat, lon], popup="You are here", 
+                         icon=folium.Icon(color="blue", icon="user", prefix='fa')).add_to(m)
 
             for s in stations:
+                color = "green" if s.get('StatusType', {}).get('IsOperational', True) else "red"
                 folium.Marker(
                     [s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude']],
                     popup=s['AddressInfo']['Title'],
-                    icon=folium.Icon(color="green", icon="bolt", prefix='fa')
+                    icon=folium.Icon(color=color, icon="bolt", prefix='fa')
                 ).add_to(m)
 
             route_coords = get_directions(lat, lon, end_lat, end_lon)
             if route_coords:
-                folium.PolyLine(locations=[(coord[1], coord[0]) for coord in route_coords], color='red', weight=4).add_to(m)
+                folium.PolyLine(locations=[(coord[1], coord[0]) for coord in route_coords], 
+                               color='#FF5733', weight=4, opacity=0.8).add_to(m)
 
             folium_static(m)
+        else:
+            st.warning("⚠️ No charging stations found nearby. Try a different location.")
+    else:
+        st.warning("📡 Location not available. Please enter a city name or allow location access.")
 
-# Theme-sensitive CSS
-if st.get_option("theme.base") == "dark":
-    st.markdown("""
-    <style>
-    body {
-        background-color: #111827;
-        color: white;
-    }
+# Adaptive CSS for both light and dark modes
+st.markdown("""
+<style>
+/* Base Styles */
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Card Styling */
+.card {
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+/* Button Styling */
+.stButton > button {
+    background: linear-gradient(135deg, #00C6FF, #0072FF);
+    color: white !important;
+    padding: 0.75em 2em;
+    border: none !important;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 114, 255, 0.3);
+}
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 114, 255, 0.4);
+    filter: brightness(110%);
+}
+
+/* Data Elements */
+.dataframe {
+    border: none !important;
+}
+.dataframe th {
+    background: #0072FF !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+.dataframe td {
+    font-size: 14px !important;
+}
+
+/* Alert Styling */
+.stAlert {
+    border-radius: 10px !important;
+}
+.st-success {
+    background-color: #00FFA3 !important;
+    color: #003B2C !important;
+    border: none !important;
+}
+.st-info {
+    background-color: #00C6FF !important;
+    color: #002847 !important;
+    border: none !important;
+}
+.st-warning {
+    background-color: #FFD166 !important;
+    color: #5E4200 !important;
+    border: none !important;
+}
+.st-error {
+    background-color: #FF6B6B !important;
+    color: #5E0000 !important;
+    border: none !important;
+}
+
+/* Tab Styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+.stTabs [data-baseweb="tab"] {
+    padding: 10px 24px;
+    border-radius: 4px 4px 0px 0px;
+    font-weight: 600;
+}
+
+/* Input Fields */
+input, select, textarea {
+    border-radius: 8px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
     .stButton > button {
-        background: linear-gradient(135deg, #1f2937, #3b82f6);
-        color: white;
+        width: 100%;
+        padding: 0.6em;
     }
-    </style>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-    <style>
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        background-color: #f5f7fa;
-        color: #1e1e2f;
-    }
-    h1, h2, h3, h4 {
-        color: #0a2540;
-        font-weight: 700;
-    }
-    .stButton > button {
-        background: linear-gradient(135deg, #0052d4, #65c7f7);
-        color: white;
-        padding: 0.75em 2em;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 16px;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 20px rgba(0, 82, 212, 0.2);
-    }
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 24px rgba(0, 82, 212, 0.3);
-    }
-    .css-1kyxreq, .stColumn {
-        background: white;
-        border-radius: 14px;
-        padding: 2rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-    }
-    thead {
-        background: #eef2f7;
-    }
-    tbody tr:hover {
-        background: #f1f4f8;
-    }
-    .stAlert {
-        background-color: #eafaf1;
-        border-left: 5px solid #34d399;
-        padding: 1rem;
-        border-radius: 10px;
-        color: #065f46;
-    }
-    .block-container {
-        padding: 3rem 2rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+}
+
+/* General improvements */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+h1, h2, h3 {
+    font-weight: 700 !important;
+}
+</style>
+""", unsafe_allow_html=True)
