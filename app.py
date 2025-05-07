@@ -10,7 +10,7 @@ import folium
 from streamlit_folium import folium_static
 from geopy.distance import geodesic
 from streamlit_lottie import st_lottie
-import polyline
+from streamlit_autorefresh import st_autorefresh
 
 # Load model
 model = joblib.load("xgboost_ev_model.pkl")
@@ -31,11 +31,15 @@ dummy_data = pd.DataFrame({
 })
 preprocessor.fit(dummy_data)
 
-# Page config
+# Config
 st.set_page_config(page_title="EV Charging AI", layout="wide")
 
-# Load Lottie animation
+# Auto-refresh every 15 seconds
+st_autorefresh(interval=15000, key="refresh")
+
+# Lottie loader
 @st.cache_data
+
 def load_lottieurl(url: str):
     r = requests.get(url)
     return r.json() if r.status_code == 200 else None
@@ -46,46 +50,47 @@ if lottie_json:
 
 # Tabs
 with st.container():
-    tab1, tab2 = st.tabs([" Prediction", " Location & Maps"])
+    tab1, tab2 = st.tabs([" Prediction", "Location & Maps"])
 
 with tab1:
-    st.markdown("### EV Charging Demand Prediction")
-    col1, col2 = st.columns([1.2, 1])
-    input_data = {}
+    st.markdown(" EV Charging Demand Prediction")
+    with st.container():
+        col1, col2 = st.columns([1.2, 1])
+        input_data = {}
 
-    with col1:
-        st.subheader("Input Parameters")
-        input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
-        input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
-        input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
-        input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
-        start_time = st.time_input("Start Time")
-        start_date = st.date_input("Start Date")
+        with col1:
+            st.subheader(" Input Parameters")
+            input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
+            input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
+            input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
+            input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
+            start_time = st.time_input("Start Time")
+            start_date = st.date_input("Start Date")
 
-        input_data['startHour'] = start_time.hour
-        input_data['startMonth'] = start_date.month
-        input_data['is_peak_hour'] = 1 if input_data['startHour'] in [7, 8, 9, 17, 18, 19, 20] else 0
-        input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
-        input_data['season'] = (
-            1 if input_data['startMonth'] in [12, 1, 2] else
-            2 if input_data['startMonth'] in [3, 4, 5] else
-            3 if input_data['startMonth'] in [6, 7, 8] else 4
-        )
-        input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
+            input_data['startHour'] = start_time.hour
+            input_data['startMonth'] = start_date.month
+            input_data['is_peak_hour'] = 1 if input_data['startHour'] in [7, 8, 9, 17, 18, 19, 20] else 0
+            input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
+            input_data['season'] = (
+                1 if input_data['startMonth'] in [12, 1, 2] else
+                2 if input_data['startMonth'] in [3, 4, 5] else
+                3 if input_data['startMonth'] in [6, 7, 8] else 4
+            )
+            input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
 
-    with col2:
-        st.subheader("Prediction Results")
-        if st.button("Predict Now"):
-            input_df = pd.DataFrame([input_data])
-            input_processed = preprocessor.transform(input_df)
-            predictions = model.predict(input_processed)
-            kwh_total_pred, charge_time_hrs_pred = predictions[0]
+        with col2:
+            st.subheader("Prediction Results")
+            if st.button(" Predict Now"):
+                input_df = pd.DataFrame([input_data])
+                input_processed = preprocessor.transform(input_df)
+                predictions = model.predict(input_processed)
+                kwh_total_pred, charge_time_hrs_pred = predictions[0]
 
-            st.success(f"Predicted kWh Total: {kwh_total_pred:.4f} kWh")
-            st.success(f"Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
+                st.success(f" Predicted kWh Total: {kwh_total_pred:.4f} kWh")
+                st.success(f" Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
 
 with tab2:
-    st.markdown("### Location & Nearby Stations")
+    st.markdown("Location & Nearby Stations")
     city_name = st.text_input("Enter city name (optional):")
 
     def get_coordinates(city):
@@ -99,21 +104,17 @@ with tab2:
         url = f"https://api.openchargemap.io/v3/poi/?output=json&latitude={lat}&longitude={lon}&maxresults=5&key=a1f5b87f-3209-4eb2-afc1-c9d379acfa10"
         return requests.get(url).json()
 
-    def get_route(start_lat, start_lon, end_lat, end_lon):
+    def get_directions(start_lat, start_lon, end_lat, end_lon):
         url = f"https://api.openrouteservice.org/v2/directions/driving-car"
-        headers = {
-            'Authorization': '5b3ce3597851110001cf62483ee31511b8e745d0b635b37fbaeb4f57',
-            'Content-Type': 'application/json'
+        headers = {"Authorization": "5b3ce3597851110001cf62483ee31511b8e745d0b635b37fbaeb4f57"}
+        params = {
+            "start": f"{start_lon},{start_lat}",
+            "end": f"{end_lon},{end_lat}"
         }
-        payload = {
-            "coordinates": [[start_lon, start_lat], [end_lon, end_lat]]
-        }
-        res = requests.post(url, json=payload, headers=headers)
-        if res.status_code == 200:
-            data = res.json()
-            geometry = data['routes'][0]['geometry']
-            return polyline.decode(geometry)
-        return None
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code == 200:
+            return response.json()['features'][0]['geometry']['coordinates']
+        return []
 
     lat, lon = None, None
     if city_name:
@@ -126,17 +127,16 @@ with tab2:
             lat = location['coords'].get('latitude')
             lon = location['coords'].get('longitude')
             if lat and lon:
-                st.success(f"Your Location: ({lat}, {lon})")
+                st.success(f" Your Location: ({lat}, {lon})")
 
     if lat and lon:
         stations = get_nearby_ev_stations(lat, lon)
         if stations:
-            station_names = [s['AddressInfo']['Title'] for s in stations]
-            selected_station_name = st.selectbox("Select a Station for Directions", station_names)
-
-            selected_station = next(s for s in stations if s['AddressInfo']['Title'] == selected_station_name)
-            end_lat = selected_station['AddressInfo']['Latitude']
-            end_lon = selected_station['AddressInfo']['Longitude']
+            station_options = [s['AddressInfo']['Title'] for s in stations]
+            selected_station = st.selectbox("Select a station to show route:", station_options)
+            selected_info = next((s for s in stations if s['AddressInfo']['Title'] == selected_station), stations[0])
+            end_lat = selected_info['AddressInfo']['Latitude']
+            end_lon = selected_info['AddressInfo']['Longitude']
 
             df = pd.DataFrame([{
                 "Name": s['AddressInfo']['Title'],
@@ -145,7 +145,8 @@ with tab2:
             st.dataframe(df)
 
             m = folium.Map(location=[lat, lon], zoom_start=13)
-            folium.Marker([lat, lon], popup="Your Location", icon=folium.Icon(color="blue")).add_to(m)
+            folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
+
             for s in stations:
                 folium.Marker(
                     [s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude']],
@@ -153,60 +154,58 @@ with tab2:
                     icon=folium.Icon(color="green", icon="bolt", prefix='fa')
                 ).add_to(m)
 
-            route_coords = get_route(lat, lon, end_lat, end_lon)
+            route_coords = get_directions(lat, lon, end_lat, end_lon)
             if route_coords:
-                folium.PolyLine(route_coords, color="blue", weight=5, opacity=0.8).add_to(m)
+                folium.PolyLine(locations=[(coord[1], coord[0]) for coord in route_coords], color='red', weight=4).add_to(m)
 
             folium_static(m)
 
-# Premium CSS Styling
+# Premium CSS
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@400;600&display=swap');
-
 html, body, [class*="css"] {
-    font-family: 'Poppins', sans-serif;
-    background-color: #f9fafc;
-    color: #222;
+    font-family: 'Inter', sans-serif;
+    background-color: #f5f7fa;
+    color: #1e1e2f;
 }
 h1, h2, h3, h4 {
-    font-family: 'Inter', sans-serif;
     color: #0a2540;
     font-weight: 700;
 }
 .stButton > button {
-    background: linear-gradient(to right, #667eea, #764ba2);
+    background: linear-gradient(135deg, #0052d4, #65c7f7);
     color: white;
     padding: 0.75em 2em;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     font-weight: 600;
     font-size: 16px;
-    box-shadow: 0 4px 14px rgba(118, 75, 162, 0.4);
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 20px rgba(0, 82, 212, 0.2);
 }
 .stButton > button:hover {
-    background: linear-gradient(to right, #5a67d8, #6b46c1);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 82, 212, 0.3);
 }
 .css-1kyxreq, .stColumn {
     background: white;
-    border-radius: 18px;
+    border-radius: 14px;
     padding: 2rem;
     margin-bottom: 1rem;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
 }
 thead {
-    background: #eef1f7;
+    background: #eef2f7;
 }
 tbody tr:hover {
-    background: #f5f7fa;
+    background: #f1f4f8;
 }
 .stAlert {
-    background-color: #ebf8ff;
-    border-left: 5px solid #3182ce;
-    color: #2c5282;
+    background-color: #eafaf1;
+    border-left: 5px solid #34d399;
     padding: 1rem;
     border-radius: 10px;
+    color: #065f46;
 }
 .block-container {
     padding: 3rem 2rem;
