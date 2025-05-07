@@ -16,22 +16,9 @@ import json
 
 # Load model
 model = joblib.load("xgboost_ev_model.pkl")
+preprocessor = joblib.load("preprocessor.pkl")
 
 # Define preprocessor
-categorical_cols = ['platform', 'facilityType', 'season']
-numeric_cols = ['stationId', 'distance', 'startHour', 'is_peak_hour', 'is_weekend', 'startMonth', 'charging_speed']
-preprocessor = ColumnTransformer([
-    ('num', StandardScaler(), numeric_cols),
-    ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
-])
-
-# Dummy fit
-dummy_data = pd.DataFrame({
-    'stationId': [0], 'distance': [0.0], 'platform': ['android'],
-    'facilityType': [1], 'startHour': [0], 'is_peak_hour': [0],
-    'is_weekend': [0], 'startMonth': [1], 'season': [1], 'charging_speed': [1.0]
-})
-preprocessor.fit(dummy_data)
 
 # Config
 st.set_page_config(page_title="EV Prediction", layout="wide")
