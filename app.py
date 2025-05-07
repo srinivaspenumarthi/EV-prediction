@@ -56,11 +56,11 @@ def load_lottiefile(filepath: str):
 lottie_json = load_lottiefile("Animation - 1746651823424.json")
 
 # Center layout using 3 columns
-col1, col2, col3 = st.columns([1, 5, 1])
+col1, col2, col3 = st.columns([1, 3, 1])
 
 with col2:
     if lottie_json:
-        st_lottie(lottie_json, height=350, speed=1.4)
+        st_lottie(lottie_json, height=350, speed=1.5)
     st.title("EV Charging System")
 
 
