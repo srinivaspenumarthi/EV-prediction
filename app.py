@@ -197,7 +197,7 @@ with tab2:
             route_coords = get_directions(lat, lon, end_lat, end_lon)
             if route_coords:
                 folium.PolyLine(locations=[(coord[1], coord[0]) for coord in route_coords], 
-                               color='#FF5733', weight=4, opacity=0.8).add_to(m)
+                               color='#4285F4', weight=4, opacity=0.8).add_to(m)
 
             folium_static(m)
         else:
