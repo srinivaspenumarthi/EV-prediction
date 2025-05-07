@@ -130,6 +130,58 @@ with tab2:
 
         m = folium.Map(location=[lat, lon], zoom_start=12)
         folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
-        for station
-::contentReference[oaicite:0]{index=0}
+            for station in stations:
+            folium.Marker(
+                [station['AddressInfo']['Latitude'], station['AddressInfo']['Longitude']],
+                popup=station['AddressInfo']['Title'],
+                icon=folium.Icon(color="green", icon="bolt", prefix='fa')
+            ).add_to(m)
+        folium_static(m)
+
+# Add custom CSS styling at the end
+st.markdown("""
+    <style>
+        /* Global Styling */
+        html, body, [class*="css"]  {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f6f9;
+        }
+
+        /* Headings */
+        h1, h2, h3 {
+            color: #0A1F44;
+        }
+
+        /* Button Styling */
+        .stButton > button {
+            background: linear-gradient(90deg, #0066ff, #00ccff);
+            color: white;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        /* Column container appearance */
+        .stColumn {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* Table container */
+        .css-1d391kg {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        /* Success messages */
+        .stAlert {
+            background-color: #e0f7e9;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
  
