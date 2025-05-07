@@ -55,7 +55,7 @@ with tab1:
         input_data = {}
 
         with col1:
-            st.subheader("\ud83d\udcca Input Parameters")
+            st.subheader(" Input Parameters")
             input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
             input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
             input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
