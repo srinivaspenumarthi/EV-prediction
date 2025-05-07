@@ -61,7 +61,7 @@ col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
     if lottie_json:
         st_lottie(lottie_json, height=350, speed=1.5)
-    st.title("EV Charging System")
+    st.markdown("<h1 style='margin-top: -30px;'>EV Charging System</h1>") 
 
 
 # Tabs
