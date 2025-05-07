@@ -104,7 +104,7 @@ with tab2:
     if city_name:
         lat, lon = get_coordinates(city_name)
         if lat and lon:
-            st.success(f"\ud83d\udccd Set to {city_name}: ({lat}, {lon})")
+            st.success(f"Set to {city_name}: ({lat}, {lon})")
     if not lat or not lon:
         location = get_geolocation()
         if location and 'coords' in location:
