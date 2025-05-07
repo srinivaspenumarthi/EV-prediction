@@ -11,11 +11,11 @@ from streamlit_folium import folium_static
 from geopy.distance import geodesic
 from streamlit_lottie import st_lottie
 
-# Load the trained XGBoost model
+# Load model
 model_filename = "xgboost_ev_model.pkl"
 model = joblib.load(model_filename)
 
-# Define preprocessing pipeline
+# Preprocessing pipeline
 categorical_cols = ['platform', 'facilityType', 'season']
 numeric_cols = ['stationId', 'distance', 'startHour', 'is_peak_hour', 'is_weekend', 'startMonth', 'charging_speed']
 preprocessor = ColumnTransformer([
@@ -23,7 +23,7 @@ preprocessor = ColumnTransformer([
     ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
 ])
 
-# Fit preprocessor with dummy data to prevent errors
+# Dummy fit
 dummy_data = pd.DataFrame({
     'stationId': [0], 'distance': [0.0], 'platform': ['android'],
     'facilityType': [1], 'startHour': [0], 'is_peak_hour': [0],
@@ -31,10 +31,10 @@ dummy_data = pd.DataFrame({
 })
 preprocessor.fit(dummy_data)
 
-# Custom Styling
-st.set_page_config(page_title="EV Charging AI 🚀", layout="wide")
+# Page Config
+st.set_page_config(page_title="EV Charging AI", layout="wide")
 
-# Load Lottie animation for loading state
+# Lottie Animation
 def load_lottieurl(url: str):
     r = requests.get(url)
     if r.status_code != 200:
@@ -45,14 +45,12 @@ with st.spinner("Loading experience..."):
     lottie_json = load_lottieurl("https://assets4.lottiefiles.com/packages/lf20_tljjah.json")
     st_lottie(lottie_json, height=250)
 
-# Tabs for Prediction and Location
+# App Tabs
 tab1, tab2 = st.tabs(["🔢 Prediction", "📍 Location & Maps"])
 
 with tab1:
     st.markdown("## EV Charging Prediction")
     st.write("---")
-
-    # Layout: Split into Two Columns
     col1, col2 = st.columns(2)
     input_data = {}
 
@@ -65,12 +63,14 @@ with tab1:
         start_time = st.time_input("Start Time")
         start_date = st.date_input("Start Date")
 
-        # Compute derived features
+        # Derived features
         input_data['startHour'] = start_time.hour
         input_data['startMonth'] = start_date.month
         input_data['is_peak_hour'] = 1 if input_data['startHour'] in [7, 8, 9, 17, 18, 19, 20] else 0
         input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
-        input_data['season'] = 1 if input_data['startMonth'] in [12, 1, 2] else 2 if input_data['startMonth'] in [3, 4, 5] else 3 if input_data['startMonth'] in [6, 7, 8] else 4
+        input_data['season'] = 1 if input_data['startMonth'] in [12, 1, 2] else \
+                               2 if input_data['startMonth'] in [3, 4, 5] else \
+                               3 if input_data['startMonth'] in [6, 7, 8] else 4
         input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
 
     with col2:
@@ -81,7 +81,6 @@ with tab1:
             predictions = model.predict(input_processed)
             kwh_total_pred, charge_time_hrs_pred = predictions[0]
 
-            # Display Predictions
             st.success(f"🔋 Predicted kWh Total: {kwh_total_pred:.4f} kWh")
             st.success(f"⏳ Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
 
@@ -112,7 +111,8 @@ with tab2:
     if lat is None or lon is None:
         location = get_geolocation()
         if location and isinstance(location, dict) and 'coords' in location:
-            lat, lon = location['coords'].get('latitude'), location['coords'].get('longitude')
+            lat = location['coords'].get('latitude')
+            lon = location['coords'].get('longitude')
             if lat and lon:
                 st.success(f"📍 Your Location: {lat}, {lon}")
             else:
@@ -122,15 +122,17 @@ with tab2:
         stations = get_nearby_ev_stations(lat, lon)
         if stations:
             station_data = pd.DataFrame([
-                {"Name": s['AddressInfo']['Title'],
-                 "Distance (km)": geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km}
+                {
+                    "Name": s['AddressInfo']['Title'],
+                    "Distance (km)": geodesic((lat, lon), (s['AddressInfo']['Latitude'], s['AddressInfo']['Longitude'])).km
+                }
                 for s in stations
             ])
             st.table(station_data)
 
         m = folium.Map(location=[lat, lon], zoom_start=12)
         folium.Marker([lat, lon], popup="You are here", icon=folium.Icon(color="blue")).add_to(m)
-            for station in stations:
+        for station in stations:
             folium.Marker(
                 [station['AddressInfo']['Latitude'], station['AddressInfo']['Longitude']],
                 popup=station['AddressInfo']['Title'],
@@ -138,50 +140,65 @@ with tab2:
             ).add_to(m)
         folium_static(m)
 
-# Add custom CSS styling at the end
+# Apple-style Premium CSS
 st.markdown("""
-    <style>
-        /* Global Styling */
-        html, body, [class*="css"]  {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f4f6f9;
-        }
+<style>
+    html, body, [class*="css"] {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        background-color: #f9fafb;
+        color: #1a1a1a;
+    }
 
-        /* Headings */
-        h1, h2, h3 {
-            color: #0A1F44;
-        }
+    h1, h2, h3, h4 {
+        color: #000000;
+        font-weight: 600;
+    }
 
-        /* Button Styling */
-        .stButton > button {
-            background: linear-gradient(90deg, #0066ff, #00ccff);
-            color: white;
-            padding: 10px 24px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-        }
+    .stButton > button {
+        background: linear-gradient(135deg, #007aff, #00c6ff);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        box-shadow: 0 4px 14px rgba(0, 118, 255, 0.39);
+        transition: all 0.3s ease-in-out;
+    }
 
-        /* Column container appearance */
-        .stColumn {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
+    .stButton > button:hover {
+        box-shadow: 0 6px 20px rgba(0, 118, 255, 0.5);
+        transform: translateY(-1px);
+    }
 
-        /* Table container */
-        .css-1d391kg {
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
+    .stAlert {
+        background-color: #e0f7e9;
+        border-left: 5px solid #00c851;
+    }
 
-        /* Success messages */
-        .stAlert {
-            background-color: #e0f7e9;
-        }
-    </style>
+    .stTable, .stDataFrame {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 1rem;
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        justify-content: center;
+    }
+
+    .stTabs [role="tab"] {
+        font-size: 1.1rem;
+        padding: 10px 20px;
+        border-radius: 20px;
+        margin: 0 5px;
+        background-color: #e5e7eb;
+        transition: background-color 0.3s;
+    }
+
+    .stTabs [role="tab"][aria-selected="true"] {
+        background-color: #007aff;
+        color: white;
+    }
+</style>
 """, unsafe_allow_html=True)
-
- 
