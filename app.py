@@ -54,7 +54,7 @@ def load_lottiefile(filepath: str):
 
 # Load the uploaded animation JSON
 lottie_json = load_lottiefile("Animation - 1746651823424.json")
-
+st.set_page_config(page_title="EV Prediction", layout="wide")
 # Center layout using 3 columns
 col1, col2, col3 = st.columns([1, 3, 1])
 
