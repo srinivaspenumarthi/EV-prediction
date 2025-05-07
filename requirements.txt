@@ -10,4 +10,4 @@ geopy
 requests
 streamlit_folium
 streamlit-js-eval
-
+streamlit-lottie
