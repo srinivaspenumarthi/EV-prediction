@@ -60,6 +60,7 @@ with tab1:
     with st.container():
         col1, col2 = st.columns([1.2, 1])
         input_data = {}
+import pandas as pd
 
 with col1:
     st.subheader("Input Parameters")
@@ -70,38 +71,52 @@ with col1:
     input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
 
     start_time = st.time_input("Start Time")
-    end_time = st.time_input("End Time")  # <-- added
+    end_time = st.time_input("End Time")
     start_date = st.date_input("Start Date")
 
-    # Fill required features
     input_data['startHour'] = start_time.hour
-    input_data['endHour'] = end_time.hour  # <-- added
-    input_data['startDay'] = start_date.day  # <-- added
+    input_data['endHour'] = end_time.hour
+    input_data['startDay'] = start_date.day
     input_data['startMonth'] = start_date.month
-    input_data['weekday'] = start_date.strftime("%A")  # e.g., 'Monday'
+    # Convert weekday string to integer: Monday=0, Sunday=6
+    input_data['weekday'] = start_date.weekday()  
 
 with col2:
     st.subheader("Prediction Results")
     if st.button("🔍 Predict Now", use_container_width=True):
 
-        # Ensure proper feature order
-        expected_columns = [
+        # Base features your preprocessor expects
+        base_features = [
             'stationId', 'weekday', 'facilityType', 'distance',
             'platform', 'startHour', 'startDay', 'startMonth', 'endHour'
         ]
+
         input_df = pd.DataFrame([input_data])
 
-        # Validation
-        missing_cols = set(expected_columns) - set(input_df.columns)
+        # Add engineered features expected by model:
+        input_df['is_peak_hour'] = input_df['startHour'].apply(lambda h: 1 if h in [7,8,9,17,18,19,20] else 0)
+        input_df['is_weekend'] = input_df['weekday'].apply(lambda d: 1 if d >= 5 else 0)
+        input_df['season'] = input_df['startMonth'].apply(
+            lambda m: 1 if m in [12,1,2] else 2 if m in [3,4,5] else 3 if m in [6,7,8] else 4
+        )
+        input_df['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
+
+        # Combine all columns (base + engineered) in the correct order expected by model
+        model_features = base_features + ['is_peak_hour', 'is_weekend', 'season', 'charging_speed']
+
+        # Check for missing columns
+        missing_cols = set(model_features) - set(input_df.columns)
         if missing_cols:
             st.error(f"Missing input columns: {missing_cols}")
             st.stop()
 
-        # Reorder to match model expectations
-        input_df = input_df[expected_columns]
+        # Reorder columns exactly as model expects
+        input_df = input_df[model_features]
 
-        # Prediction
+        # Preprocess input data
         input_processed = preprocessor.transform(input_df)
+
+        # Predict
         predictions = model.predict(input_processed)
         kwh_total_pred, charge_time_hrs_pred = predictions[0]
 
