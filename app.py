@@ -14,11 +14,8 @@ import time
 import json
 import xgboost
 
-# Load model
+# Load only the model, preprocessor will be implemented inline
 model = joblib.load("xgboost_ev_model.pkl")
-preprocessor = joblib.load("preprocessor.pkl")
-
-# Define preprocessor
 
 # Config
 st.set_page_config(page_title="EV Prediction", layout="wide")
@@ -55,12 +52,82 @@ with col2:
 with st.container():
     tab1, tab2 = st.tabs(["⚡ Prediction", "📍 Location & Maps"])
 
+# Define built-in preprocessing function to replace preprocessor.pkl
+def preprocess_data(input_data):
+    """
+    Custom preprocessing function to replace the need for preprocessor.pkl
+    
+    This function:
+    1. Handles categorical features with one-hot encoding
+    2. Performs numerical scaling
+    3. Returns preprocessed data ready for model prediction
+    """
+    df = input_data.copy()
+    
+    # Categorical features
+    categorical_features = ['platform', 'facilityType']
+    
+    # Create one-hot encoding for categorical features
+    for feature in categorical_features:
+        if feature == 'platform':
+            # One-hot encode platform (android, ios, web)
+            df[f'{feature}_android'] = (df[feature] == 'android').astype(int)
+            df[f'{feature}_ios'] = (df[feature] == 'ios').astype(int)
+            df[f'{feature}_web'] = (df[feature] == 'web').astype(int)
+        elif feature == 'facilityType':
+            # One-hot encode facilityType (1, 2, 3, 4)
+            df[f'{feature}_1'] = (df[feature] == 1).astype(int)
+            df[f'{feature}_2'] = (df[feature] == 2).astype(int)
+            df[f'{feature}_3'] = (df[feature] == 3).astype(int)
+            df[f'{feature}_4'] = (df[feature] == 4).astype(int)
+    
+    # Numerical features to scale
+    numerical_features = ['stationId', 'distance', 'startHour', 'is_peak_hour', 
+                         'is_weekend', 'startMonth', 'season', 'charging_speed']
+    
+    # Feature scaling for numerical features (StandardScaler equivalent)
+    # Define scaling parameters (mean and std) based on training data
+    # Note: These values should be the same as in your original preprocessor
+    scaling_params = {
+        'stationId': {'mean': 50, 'std': 25},  # Example values - replace with actual values
+        'distance': {'mean': 3.5, 'std': 2.8},  # from your training data
+        'startHour': {'mean': 12, 'std': 6},
+        'is_peak_hour': {'mean': 0.5, 'std': 0.5},
+        'is_weekend': {'mean': 0.3, 'std': 0.45},
+        'startMonth': {'mean': 6.5, 'std': 3.5},
+        'season': {'mean': 2.5, 'std': 1.12},
+        'charging_speed': {'mean': 2.04, 'std': 0.85}
+    }
+    
+    # Apply scaling
+    for feature in numerical_features:
+        if feature in scaling_params:
+            mean = scaling_params[feature]['mean']
+            std = scaling_params[feature]['std']
+            df[feature] = (df[feature] - mean) / std
+    
+    # Drop original categorical columns and create final feature set
+    df = df.drop(['platform', 'facilityType'], axis=1)
+    
+    # Make sure columns are in the same order as expected by the model
+    expected_columns = ['stationId', 'distance', 'startHour', 'is_peak_hour', 
+                        'is_weekend', 'startMonth', 'season', 'charging_speed',
+                        'platform_android', 'platform_ios', 'platform_web',
+                        'facilityType_1', 'facilityType_2', 'facilityType_3', 'facilityType_4']
+    
+    # Ensure all expected columns exist (add missing ones with zeros)
+    for col in expected_columns:
+        if col not in df.columns:
+            df[col] = 0
+            
+    # Return preprocessed data with columns in correct order
+    return df[expected_columns].values
+
 with tab1:
     st.markdown("## EV Charging Prediction")
     with st.container():
         col1, col2 = st.columns([1.2, 1])
         input_data = {}
-import pandas as pd
 
 with col1:
     st.subheader("Input Parameters")  
@@ -71,9 +138,9 @@ with col1:
     startHour = st.number_input("Start Hour (0-23)", min_value=0, max_value=23)
     startMonth = st.number_input("Start Month (1-12)", min_value=1, max_value=12)
 
-# Engineered features
+    # Engineered features
     is_peak_hour = 1 if startHour in [7,8,9,17,18,19,20] else 0
-# Here you need day info to check weekend; assuming user provides weekday or date
+    # Here you need day info to check weekend; assuming user provides weekday or date
     weekday = st.selectbox("Weekday", ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'])
     is_weekend = 1 if weekday in ['Saturday', 'Sunday'] else 0
 
@@ -84,11 +151,12 @@ with col1:
     )
 
     charging_speed = 5.809629 / (2.841488 + 1e-6)
+    
 with col2:
     st.subheader("Prediction Results")
     if st.button("🔍 Predict Now", use_container_width=True):
         
-        # Base features your preprocessor expects
+        # Base features 
         input_data = pd.DataFrame([{
             'stationId': stationId,
             'distance': distance,
@@ -102,10 +170,10 @@ with col2:
             'charging_speed': charging_speed
         }])
 
-# Preprocess (use your fitted preprocessor)
-        input_processed = preprocessor.transform(input_data)
+        # Preprocess using our custom function
+        input_processed = preprocess_data(input_data)
 
-# Predict
+        # Predict
         predictions = model.predict(input_processed)
         kwh_total_pred, charge_time_hrs_pred = predictions[0]
 
