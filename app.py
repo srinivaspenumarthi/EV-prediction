@@ -63,60 +63,49 @@ with tab1:
 import pandas as pd
 
 with col1:
-    st.subheader("Input Parameters")
+    st.subheader("Input Parameters")  
+    stationId = st.number_input("Station ID", min_value=0, step=1)
+    distance = st.number_input("Distance (km)", min_value=0.0, format="%.4f")
+    platform = st.selectbox("Platform", ["android", "ios", "web"])
+    facilityType = st.selectbox("Facility Type", [1, 2, 3, 4])
+    startHour = st.number_input("Start Hour (0-23)", min_value=0, max_value=23)
+    startMonth = st.number_input("Start Month (1-12)", min_value=1, max_value=12)
 
-    input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
-    input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
-    input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
-    input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
+# Engineered features
+    is_peak_hour = 1 if startHour in [7,8,9,17,18,19,20] else 0
+# Here you need day info to check weekend; assuming user provides weekday or date
+    weekday = st.selectbox("Weekday", ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'])
+    is_weekend = 1 if weekday in ['Saturday', 'Sunday'] else 0
 
-    start_time = st.time_input("Start Time")
-    end_time = st.time_input("End Time")
-    start_date = st.date_input("Start Date")
+    season = (
+        1 if startMonth in [12,1,2] else
+        2 if startMonth in [3,4,5] else
+        3 if startMonth in [6,7,8] else 4
+    )
 
-    input_data['startHour'] = start_time.hour
-    input_data['endHour'] = end_time.hour
-    input_data['startDay'] = start_date.day
-    input_data['startMonth'] = start_date.month
-    # Convert weekday string to integer: Monday=0, Sunday=6
-    input_data['weekday'] = start_date.weekday()  
-
+    charging_speed = 5.809629 / (2.841488 + 1e-6)
 with col2:
     st.subheader("Prediction Results")
     if st.button("🔍 Predict Now", use_container_width=True):
-
+        
         # Base features your preprocessor expects
-        base_features = [
-            'stationId', 'weekday', 'facilityType', 'distance',
-            'platform', 'startHour', 'startDay', 'startMonth', 'endHour'
-        ]
+        input_data = pd.DataFrame([{
+            'stationId': stationId,
+            'distance': distance,
+            'platform': platform,
+            'facilityType': facilityType,
+            'startHour': startHour,
+            'is_peak_hour': is_peak_hour,
+            'is_weekend': is_weekend,
+            'startMonth': startMonth,
+            'season': season,
+            'charging_speed': charging_speed
+        }])
 
-        input_df = pd.DataFrame([input_data])
+# Preprocess (use your fitted preprocessor)
+        input_processed = preprocessor.transform(input_data)
 
-        # Add engineered features expected by model:
-        input_df['is_peak_hour'] = input_df['startHour'].apply(lambda h: 1 if h in [7,8,9,17,18,19,20] else 0)
-        input_df['is_weekend'] = input_df['weekday'].apply(lambda d: 1 if d >= 5 else 0)
-        input_df['season'] = input_df['startMonth'].apply(
-            lambda m: 1 if m in [12,1,2] else 2 if m in [3,4,5] else 3 if m in [6,7,8] else 4
-        )
-        input_df['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
-
-        # Combine all columns (base + engineered) in the correct order expected by model
-        model_features = base_features + ['is_peak_hour', 'is_weekend', 'season', 'charging_speed']
-
-        # Check for missing columns
-        missing_cols = set(model_features) - set(input_df.columns)
-        if missing_cols:
-            st.error(f"Missing input columns: {missing_cols}")
-            st.stop()
-
-        # Reorder columns exactly as model expects
-        input_df = input_df[model_features]
-
-        # Preprocess input data
-        input_processed = preprocessor.transform(input_df)
-
-        # Predict
+# Predict
         predictions = model.predict(input_processed)
         kwh_total_pred, charge_time_hrs_pred = predictions[0]
 
