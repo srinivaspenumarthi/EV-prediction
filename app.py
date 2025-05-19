@@ -12,7 +12,7 @@ from geopy.distance import geodesic
 from streamlit_lottie import st_lottie
 import time
 import json
-
+import xgboost
 
 # Load model
 model = joblib.load("xgboost_ev_model.pkl")
