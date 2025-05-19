@@ -11,3 +11,4 @@ streamlit-folium
 streamlit-lottie
 streamlit-js-eval
 streamlit-autorefresh
+scipy
