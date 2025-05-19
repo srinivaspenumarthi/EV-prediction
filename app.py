@@ -63,6 +63,7 @@ with tab1:
 
         with col1:
             st.subheader("Input Parameters")
+            st.write("Expected columns by preprocessor:", preprocessor.feature_names_in_)
             input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
             input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
             input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
