@@ -61,37 +61,52 @@ with tab1:
         col1, col2 = st.columns([1.2, 1])
         input_data = {}
 
-        with col1:
-            st.subheader("Input Parameters")
-            st.write("Expected columns by preprocessor:", preprocessor.feature_names_in_)
-            input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
-            input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
-            input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
-            input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
-            start_time = st.time_input("Start Time")
-            start_date = st.date_input("Start Date")
+with col1:
+    st.subheader("Input Parameters")
 
-            input_data['startHour'] = start_time.hour
-            input_data['startMonth'] = start_date.month
-            input_data['is_peak_hour'] = 1 if input_data['startHour'] in [7, 8, 9, 17, 18, 19, 20] else 0
-            input_data['is_weekend'] = 1 if start_date.weekday() >= 5 else 0
-            input_data['season'] = (
-                1 if input_data['startMonth'] in [12, 1, 2] else
-                2 if input_data['startMonth'] in [3, 4, 5] else
-                3 if input_data['startMonth'] in [6, 7, 8] else 4
-            )
-            input_data['charging_speed'] = 5.809629 / (2.841488 + 1e-6)
+    input_data['stationId'] = st.number_input("Station ID", value=0, step=1)
+    input_data['distance'] = st.number_input("Distance (km)", value=0.0, format="%.4f")
+    input_data['platform'] = st.selectbox("Platform", ["android", "ios", "web"])
+    input_data['facilityType'] = st.selectbox("Facility Type", [1, 2, 3, 4])
 
-        with col2:
-            st.subheader("Prediction Results")
-            if st.button("🔍 Predict Now", use_container_width=True):
-                input_df = pd.DataFrame([input_data])
-                input_processed = preprocessor.transform(input_df)
-                predictions = model.predict(input_processed)
-                kwh_total_pred, charge_time_hrs_pred = predictions[0]
+    start_time = st.time_input("Start Time")
+    end_time = st.time_input("End Time")  # <-- added
+    start_date = st.date_input("Start Date")
 
-                st.success(f"⚡ Predicted kWh Total: {kwh_total_pred:.4f} kWh")
-                st.success(f"⏱️ Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
+    # Fill required features
+    input_data['startHour'] = start_time.hour
+    input_data['endHour'] = end_time.hour  # <-- added
+    input_data['startDay'] = start_date.day  # <-- added
+    input_data['startMonth'] = start_date.month
+    input_data['weekday'] = start_date.strftime("%A")  # e.g., 'Monday'
+
+with col2:
+    st.subheader("Prediction Results")
+    if st.button("🔍 Predict Now", use_container_width=True):
+
+        # Ensure proper feature order
+        expected_columns = [
+            'stationId', 'weekday', 'facilityType', 'distance',
+            'platform', 'startHour', 'startDay', 'startMonth', 'endHour'
+        ]
+        input_df = pd.DataFrame([input_data])
+
+        # Validation
+        missing_cols = set(expected_columns) - set(input_df.columns)
+        if missing_cols:
+            st.error(f"Missing input columns: {missing_cols}")
+            st.stop()
+
+        # Reorder to match model expectations
+        input_df = input_df[expected_columns]
+
+        # Prediction
+        input_processed = preprocessor.transform(input_df)
+        predictions = model.predict(input_processed)
+        kwh_total_pred, charge_time_hrs_pred = predictions[0]
+
+        st.success(f"⚡ Predicted kWh Total: {kwh_total_pred:.4f} kWh")
+        st.success(f"⏱️ Predicted Charge Time: {charge_time_hrs_pred:.4f} hrs")
 
 with tab2:
     st.markdown("## Location & Nearby Stations")
